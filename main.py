@@ -1,6 +1,7 @@
+from config import get_settings
 def main():
-    print("Hello from living-wage-etl!")
-
+    settings = get_settings()
+    print(settings.model_dump_json(indent=4))
 
 if __name__ == "__main__":
     main()
