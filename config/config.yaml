@@ -1,0 +1,14 @@
+# API Configuration
+api:
+  base_url: "https://api.census.gov/data/2023/acs/acs5"
+  # https://api.census.gov/data/2023/acs/acs5?get=NAME&for=county:*&in=state:34
+  # https://api.census.gov/data/2023/acs/acs5?get=NAME&for=state:34
+
+# Web Scraping Configuration
+scraping:
+  base_url: "https://livingwage.mit.edu"
+# State Configuration
+target_state:
+  state_fips: "34"
+  # state_name: "New Jersey"
+  # state_abbr: "NJ"
