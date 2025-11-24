@@ -1,11 +1,10 @@
 '''
 This module contains the settings for the application.
 '''
-
 from functools import lru_cache
 from pathlib import Path
 from typing import Type
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -14,7 +13,8 @@ from pydantic_settings import (
 )
 from config.models import ApiConfig, ScrapingConfig, TargetStateConfig
 
-# Default paths: TODO: Consider using environment variables to override these paths
+# Default paths:
+# TODO: Consider using environment variables to override these paths
 _DEFAULT_YAML_FILE = Path(__file__).parent / "config.yaml"
 _DEFAULT_ENV_FILE = Path(__file__).parent.parent / ".env"
 
@@ -22,17 +22,14 @@ class Settings(BaseSettings):
     '''
     This class contains the configurations for the application.
     '''
+    # Environment settings
+    environment: str = Field(default='production')
 
-    model_config = SettingsConfigDict(
-        env_file=str(_DEFAULT_ENV_FILE),
-        env_file_encoding="utf-8",
-        yaml_file=str(_DEFAULT_YAML_FILE),
-    )
-
-    # Application settings
-    app_name: str = "wage-etl"
-    app_version: str = "0.1.0"
-    log_level: str = "INFO"
+    # Logging
+    log_level: str = Field(default="INFO")
+    log_dir: Path = Path(__file__).parent.parent / "logs"
+    log_to_file: bool = Field(default=True)
+    log_format: str = Field(default="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Base Destination Paths
     base_dir: Path = Path(__file__).parent.parent
@@ -53,6 +50,32 @@ class Settings(BaseSettings):
     scraping: ScrapingConfig = Field(default_factory=ScrapingConfig)
     target_state: TargetStateConfig = Field(default_factory=TargetStateConfig)
 
+    # Customize settings source priority
+    model_config = SettingsConfigDict(
+        env_file=str(_DEFAULT_ENV_FILE),
+        env_file_encoding="utf-8",
+        yaml_file=str(_DEFAULT_YAML_FILE),
+        extra="ignore",
+    )
+
+    @field_validator('environment')
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        '''Validate environment is allowed.'''
+        allowed = {'development', 'testing', 'production'}
+        if v not in allowed:
+            raise ValueError(f"Invalid environment: {v}. Must be one of {allowed}")
+        return v
+    
+    @field_validator('log_level')
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        '''Validate log level is allowed.'''
+        allowed = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
+        if v not in allowed:
+            raise ValueError(f"Invalid log level: {v}. Must be one of {allowed}")
+        return v
+
     @classmethod
     def settings_customise_sources(
         cls,
@@ -66,14 +89,22 @@ class Settings(BaseSettings):
         Customize settings source priority.
         '''
         if not _DEFAULT_YAML_FILE.exists():
-            raise FileNotFoundError(f"YAML file not found: {_DEFAULT_YAML_FILE}")
-        
+            raise FileNotFoundError(
+                f"YAML file not found: {_DEFAULT_YAML_FILE}")
+
         return (
             dotenv_settings,
             env_settings,
             YamlConfigSettingsSource(settings_cls, _DEFAULT_YAML_FILE),
             init_settings,
         )
+
+    @property
+    def db_url(self) -> str:
+        '''
+        Get the database URL.
+        '''
+        return f"{self.db_driver}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
     def ensure_dirs(self):
         '''
@@ -82,19 +113,29 @@ class Settings(BaseSettings):
         for dir in [self.raw_dir, self.processed_dir]:
             dir.mkdir(parents=True, exist_ok=True)
     
-    @property
-    def db_url(self) -> str:
-        '''
-        Get the database URL.
-        '''
-        return f"{self.db_driver}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
-
-
+    def __init__(self, **data):
+        super().__init__(**data)
+        
+        # Auto-adjust settings based on environment
+        if self.environment == 'development':
+            if 'log_level' not in data:
+                self.log_level = 'DEBUG'
+            if 'log_to_file' not in data:
+                self.log_to_file = False
+                
+        elif self.environment == 'testing':
+            if 'log_level' not in data:
+                self.log_level = 'WARNING'
+            if 'log_to_file' not in data:
+                self.log_to_file = False
+            if 'raw_dir' not in data:
+                self.raw_dir = self.data_dir / "test" / "raw"
+            if 'processed_dir' not in data:
+                self.processed_dir = self.data_dir / "test" / "processed"
+    
 @lru_cache
 def get_settings() -> Settings:
-    '''
-    Get the settings for the application.
-    '''
+    '''Get the settings for the application.'''
     settings = Settings()
     settings.ensure_dirs()
     return settings
