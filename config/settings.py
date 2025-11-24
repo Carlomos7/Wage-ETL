@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     '''
     This class contains the configurations for the application.
     '''
+    # Application settings
+    app_name: str = Field(default="wage_etl")
+    
     # Environment settings
     environment: str = Field(default='production')
 
@@ -29,7 +32,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
     log_dir: Path = Path(__file__).parent.parent / "logs"
     log_to_file: bool = Field(default=True)
-    log_format: str = Field(default="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging_config_file: Path = Path(__file__).parent / "logging_conf.json"
 
     # Base Destination Paths
     base_dir: Path = Path(__file__).parent.parent
@@ -110,7 +113,7 @@ class Settings(BaseSettings):
         '''
         Ensure all required directories exist.
         '''
-        for dir in [self.raw_dir, self.processed_dir]:
+        for dir in [self.raw_dir, self.processed_dir, self.log_dir]:
             dir.mkdir(parents=True, exist_ok=True)
     
     def __init__(self, **data):
