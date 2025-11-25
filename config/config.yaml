@@ -9,6 +9,6 @@ scraping:
   base_url: "https://livingwage.mit.edu"
 # State Configuration
 target_state:
-  state_fips: "34"
+  #state_fips: "34"
   # state_name: "New Jersey"
-  # state_abbr: "NJ"
+  state_abbr: "NJ"
