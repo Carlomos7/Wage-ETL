@@ -1,7 +1,7 @@
 from config import get_settings
 from config.logging import setup_logging, get_logger
 import requests
-from src.extract.web_scraper import scrape_all_counties
+from src.extract import scrape_all_counties
 
 def main():
     setup_logging()
