@@ -85,3 +85,12 @@ def extract_table_rows(table: BeautifulSoup) -> list[list[str]]:
         row_data = [cell.get_text(strip=True) for cell in tr.find_all('td')]
         rows.append(row_data)
     return rows
+
+def table_to_df(rows: list[list[str]], headers: list[str], county_fips: str) -> pd.DataFrame:
+    '''
+    Convert the rows and headers to a pandas dataframe
+    '''
+    logger.debug(f'Converting rows and headers to dataframe')
+    df = pd.DataFrame(rows, columns=headers)
+    df['county_fips'] = str(county_fips).zfill(3)
+    return df
