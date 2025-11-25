@@ -104,3 +104,23 @@ def process_table(table: BeautifulSoup, county_fips: str) -> pd.DataFrame:
     rows = extract_table_rows(table)
     df = table_to_df(rows, headers, county_fips)
     return df
+
+def upsert_to_csv(df: pd.DataFrame, filename: Path, county_fips: str) -> None:
+    '''
+    Upsert the dataframe to the csv file
+    '''
+    logger.debug(f'Upserting dataframe to {filename}')
+    county_fips = str(county_fips).zfill(3)
+
+    if filename.exists():
+        df_master = pd.read_csv(filename, dtype={'county_fips': str})
+        df_master['county_fips'] = df_master['county_fips'].str.zfill(3)
+        # Remove old rows for the county
+        if 'county_fips' in df_master.columns:
+            df_master = df_master[df_master['county_fips'] != county_fips]
+    else:
+        df_master = pd.DataFrame()
+
+    # Append new data
+    df_master = pd.concat([df_master, df], ignore_index=True)
+    df_master.to_csv(filename, index=False)
