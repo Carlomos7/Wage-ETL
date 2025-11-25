@@ -27,3 +27,11 @@ def get_page(url, timeout=30) -> requests.Response:
     except requests.exceptions.RequestException as e:
         logger.error(f'Request failed: {e}')
 
+
+def scrape_tables(page: requests.Response) -> list[BeautifulSoup]:
+    '''
+    Scrape the tables from the page
+    '''
+    logger.debug(f'Scraping tables from {page}')
+    soup = BeautifulSoup(page.content, "html.parser")
+    return soup.find_all('table', class_='results_table')
