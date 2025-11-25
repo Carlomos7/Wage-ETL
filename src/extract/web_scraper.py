@@ -72,3 +72,16 @@ def extract_table_headers(table: BeautifulSoup) -> list[str]:
                 col_index += 1
 
     return headers
+
+
+def extract_table_rows(table: BeautifulSoup) -> list[list[str]]:
+    '''
+    Extract the rows from the table
+    '''
+    logger.debug(f'Extracting rows from {table}')
+    tbody = table.find('tbody')
+    rows = []
+    for tr in tbody.find_all('tr'):
+        row_data = [cell.get_text(strip=True) for cell in tr.find_all('td')]
+        rows.append(row_data)
+    return rows
