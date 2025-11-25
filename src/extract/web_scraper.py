@@ -86,6 +86,7 @@ def extract_table_rows(table: BeautifulSoup) -> list[list[str]]:
         rows.append(row_data)
     return rows
 
+
 def table_to_df(rows: list[list[str]], headers: list[str], county_fips: str) -> pd.DataFrame:
     '''
     Convert the rows and headers to a pandas dataframe
@@ -94,6 +95,7 @@ def table_to_df(rows: list[list[str]], headers: list[str], county_fips: str) -> 
     df = pd.DataFrame(rows, columns=headers)
     df['county_fips'] = str(county_fips).zfill(3)
     return df
+
 
 def process_table(table: BeautifulSoup, county_fips: str) -> pd.DataFrame:
     '''
@@ -104,6 +106,7 @@ def process_table(table: BeautifulSoup, county_fips: str) -> pd.DataFrame:
     rows = extract_table_rows(table)
     df = table_to_df(rows, headers, county_fips)
     return df
+
 
 def upsert_to_csv(df: pd.DataFrame, filename: Path, county_fips: str) -> None:
     '''
@@ -124,6 +127,7 @@ def upsert_to_csv(df: pd.DataFrame, filename: Path, county_fips: str) -> None:
     # Append new data
     df_master = pd.concat([df_master, df], ignore_index=True)
     df_master.to_csv(filename, index=False)
+
 
 def scrape_county(state_fips: str, county_fips: str) -> None:
     '''
@@ -151,3 +155,13 @@ def scrape_county(state_fips: str, county_fips: str) -> None:
     upsert_to_csv(wages_df, wages_filename, county_fips)
     logger.info(f"Upserting county {county_fips} into {expenses_filename}")
     upsert_to_csv(expenses_df, expenses_filename, county_fips)
+
+
+def scrape_all_counties(state_fips: str, county_codes: list[str]) -> None:
+    '''
+    Scrape all counties for a specified state
+    '''
+    logger.debug(f'Scraping all counties')
+    for county_fips in county_codes:
+        logger.info(f"Processing county FIPS: {county_fips}")
+        scrape_county(state_fips, county_fips)
