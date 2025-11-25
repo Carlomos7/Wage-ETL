@@ -124,3 +124,30 @@ def upsert_to_csv(df: pd.DataFrame, filename: Path, county_fips: str) -> None:
     # Append new data
     df_master = pd.concat([df_master, df], ignore_index=True)
     df_master.to_csv(filename, index=False)
+
+def scrape_county(state_fips: str, county_fips: str) -> None:
+    '''
+    Scrape a specific county from a specified state
+    '''
+    logger.debug(f'Scraping county {county_fips}')
+    base_url = settings.scraping.base_url
+    url = f"{base_url}/counties/{state_fips + county_fips}"
+    page = get_page(url)
+    tables = scrape_tables(page)
+    if len(tables) < 2:
+        logger.error("Expected at least 2 tables!")
+        return
+    current_year = datetime.now().year
+    output_path = settings.raw_dir / str(current_year)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    wages_df = process_table(tables[0], county_fips)
+    expenses_df = process_table(tables[1], county_fips)
+    wages_filename = output_path / Path(f'wage_rates_{state_fips}.csv')
+    expenses_filename = output_path / \
+        Path(f'expense_breakdown_{state_fips}.csv')
+
+    logger.info(f"Upserting county {county_fips} into {wages_filename}")
+    upsert_to_csv(wages_df, wages_filename, county_fips)
+    logger.info(f"Upserting county {county_fips} into {expenses_filename}")
+    upsert_to_csv(expenses_df, expenses_filename, county_fips)
