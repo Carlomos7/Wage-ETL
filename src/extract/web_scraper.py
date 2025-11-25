@@ -8,3 +8,22 @@ from datetime import datetime
 
 settings = get_settings()
 logger = get_logger(module=__name__)
+
+
+# TODO: Add timeout to yaml config
+
+
+def get_page(url, timeout=30) -> requests.Response:
+    '''
+    Fetch the page from the URL
+    '''
+    logger.info(f'Fetching data from {url}')
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        logger.info(
+            f'Succesfully fetched data (Status: {response.status_code})')
+        return response
+    except requests.exceptions.RequestException as e:
+        logger.error(f'Request failed: {e}')
+
