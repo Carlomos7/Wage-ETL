@@ -94,3 +94,13 @@ def table_to_df(rows: list[list[str]], headers: list[str], county_fips: str) -> 
     df = pd.DataFrame(rows, columns=headers)
     df['county_fips'] = str(county_fips).zfill(3)
     return df
+
+def process_table(table: BeautifulSoup, county_fips: str) -> pd.DataFrame:
+    '''
+    Process the table
+    '''
+    logger.debug(f'Processing table {table}')
+    headers = extract_table_headers(table)
+    rows = extract_table_rows(table)
+    df = table_to_df(rows, headers, county_fips)
+    return df
