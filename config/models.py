@@ -33,10 +33,22 @@ class TargetStateConfig(BaseModel):
     '''
     Target state configuration.
     '''
-    state_fips: str
-    @field_validator('state_fips')
-    def state_fips_not_empty(cls, v: str) -> str:
-        '''Validate the state FIPS code is not empty.'''
+    state_abbr: str
+    @field_validator('state_abbr')
+    def state_abbr_not_empty(cls, v: str) -> str:
+        '''Validate the state abbreviation is not empty.'''
         if not v:
-            raise ValueError("State FIPS code cannot be empty")
+            raise ValueError("State abbreviation cannot be empty")
+        return v
+
+class StateConfig(BaseModel):
+    '''
+    State configuration with FIPS mappingg from a JSON file.
+    '''
+    fips_map: dict[str, str]
+    @field_validator('fips_map')
+    def fips_map_not_empty(cls, v: dict[str, str]) -> dict[str, str]:
+        '''Validate the FIPS map is not empty.'''
+        if not v:
+            raise ValueError("FIPS map cannot be empty")
         return v

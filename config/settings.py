@@ -1,6 +1,7 @@
 '''
 This module contains the settings for the application.
 '''
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Type
@@ -11,12 +12,28 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from config.models import ApiConfig, ScrapingConfig, TargetStateConfig
+from config.models import ApiConfig, ScrapingConfig, TargetStateConfig, StateConfig
 
 # Default paths:
 # TODO: Consider using environment variables to override these paths
 _DEFAULT_YAML_FILE = Path(__file__).parent / "config.yaml"
 _DEFAULT_ENV_FILE = Path(__file__).parent.parent / ".env"
+_DEFAULT_STATE_JSON_FILE = Path(__file__).parent / "state_fips.json"
+
+
+def _load_state_config() -> StateConfig:
+    '''
+    Load StateConfig from the JSON file.
+    '''
+    if not _DEFAULT_STATE_JSON_FILE.exists():
+        raise FileNotFoundError(
+            f"State FIPS file not found: {_DEFAULT_STATE_JSON_FILE}")
+    
+    with open(_DEFAULT_STATE_JSON_FILE, 'r', encoding='utf-8') as f:
+        fips_map = json.load(f)
+    
+    return StateConfig(fips_map=fips_map)
+
 
 class Settings(BaseSettings):
     '''
@@ -52,7 +69,7 @@ class Settings(BaseSettings):
     api: ApiConfig = Field(default_factory=ApiConfig)
     scraping: ScrapingConfig = Field(default_factory=ScrapingConfig)
     target_state: TargetStateConfig = Field(default_factory=TargetStateConfig)
-
+    state_config: StateConfig = Field(default_factory=_load_state_config)
     # Customize settings source priority
     model_config = SettingsConfigDict(
         env_file=str(_DEFAULT_ENV_FILE),
