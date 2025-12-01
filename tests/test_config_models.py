@@ -26,6 +26,6 @@ def test_scraping_config_invalid_data():
 
 def test_target_state_config_valid_data():
     '''Test the target state configuration with valid data.'''
-    test_fips = "34"
-    target_state_config = TargetStateConfig(state_fips=test_fips)
-    assert target_state_config.state_fips == test_fips
+    test_abbr = "NJ"
+    target_state_config = TargetStateConfig(state_abbr=test_abbr)
+    assert target_state_config.state_abbr == test_abbr
