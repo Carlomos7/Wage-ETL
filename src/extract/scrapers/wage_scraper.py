@@ -3,8 +3,6 @@ Scraper for the MIT Living Wage Calculator.
 '''
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-
 from src.extract.scrapers.base import BaseScraper
 
 
@@ -26,7 +24,7 @@ class WageScraper(BaseScraper):
         Parse the MIT Living Wage page and extract wage/expense tables.
 
         Returns:
-            dict with 'wages_df' and 'expenses_df' DataFrames
+            dict with 'wages_data' and 'expenses_data' (lists of row dicts)
         '''
         tables = self._scrape_tables(response)
 
@@ -34,12 +32,9 @@ class WageScraper(BaseScraper):
             raise ValueError(
                 f"Expected at least 2 tables, found {len(tables)}")
 
-        wages_df = self._process_table(tables[0], county_fips)
-        expenses_df = self._process_table(tables[1], county_fips)
-
         return {
-            'wages_df': wages_df,
-            'expenses_df': expenses_df
+            "wages_data": self._extract_table(tables[0], county_fips),
+            "expenses_data": self._extract_table(tables[1], county_fips),
         }
 
     def _scrape_tables(self, page: requests.Response) -> list[BeautifulSoup]:
@@ -91,21 +86,36 @@ class WageScraper(BaseScraper):
         Extract the rows from the table.
         '''
         self.logger.debug('Extracting rows from table')
-        tbody = table.find('tbody')
-        rows = []
-        for tr in tbody.find_all('tr'):
-            row_data = [cell.get_text(strip=True)
-                        for cell in tr.find_all('td')]
-            rows.append(row_data)
-        return rows
+        return [[cell.get_text(strip=True) for cell in tr.find_all('td')]
+                for tr in table.find('tbody').find_all('tr')]
 
-    def _process_table(self, table: BeautifulSoup, county_fips: str) -> pd.DataFrame:
-        '''
-        Process a table into a DataFrame.
-        '''
-        self.logger.debug('Processing table')
+    def _extract_table(self, table: BeautifulSoup, county_fips: str) -> list[dict]:
+        """
+        Extract a table (headers + rows) into a list of row dicts.
+
+        Each dict represents a single row:
+            {header1: value1, header2: value2, ..., "county_fips": county_fips}
+
+        Logs a warning if any row length does not match headers.
+        """
+        self.logger.debug('Extracting table into list of row dicts')
         headers = self._extract_table_headers(table)
         rows = self._extract_table_rows(table)
-        df = pd.DataFrame(rows, columns=headers)
-        df['county_fips'] = str(county_fips).zfill(3)
-        return df
+        county_fips = str(county_fips).zfill(3)
+
+        extracted = []
+        for row in rows:
+            if len(row) != len(headers):
+                self.logger.warning(
+                    f"Row/header length mismatch detected in county {county_fips}: "
+                    f"row has {len(row)} columns, headers have {len(headers)}"
+                )
+                if len(row) < len(headers):
+                    row += [None] * (len(headers) - len(row))
+                else:
+                    row = row[:len(headers)]
+            row_dict = dict(zip(headers, row))
+            row_dict["county_fips"] = county_fips
+            extracted.append(row_dict)
+
+        return extracted

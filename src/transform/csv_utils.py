@@ -4,8 +4,9 @@ CSV storage utilities.
 from pathlib import Path
 from typing import Dict, Set, Optional
 import pandas as pd
-from config.logging import get_logger
-from src.extract.logging_utils import format_log_with_metadata
+from config.logging import get_logger, format_log_with_metadata
+from config.settings import get_settings
+from src.transform.pandas_ops import table_to_dataframe
 
 logger = get_logger(module=__name__)
 
@@ -109,3 +110,81 @@ def upsert_to_csv(df: pd.DataFrame, filename: Path, county_fips: str, index_cach
     # Update cache if provided
     if index_cache:
         index_cache.update_index(filename, county_fips, added=True)
+
+
+def get_output_paths(state_fips: str, year: int) -> tuple[Path, Path]:
+    '''
+    Get the output file paths for wages and expenses data.
+    
+    Args:
+        state_fips: State FIPS code
+        year: Year for the data
+        
+    Returns:
+        Tuple of (wages_filename, expenses_filename)
+    '''
+    settings = get_settings()
+    output_path = settings.raw_dir / str(year)
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    wages_filename = output_path / Path(f'wage_rates_{state_fips}.csv')
+    expenses_filename = output_path / Path(f'expense_breakdown_{state_fips}.csv')
+    
+    return wages_filename, expenses_filename
+
+
+def transform_and_save(
+    wages_data: list[dict],
+    expenses_data: list[dict],
+    state_fips: str,
+    county_fips: str,
+    index_cache: Optional[CSVIndexCache] = None,
+    year: Optional[int] = None
+) -> bool:
+    '''
+    Transform and save scraped data to CSV files.
+    
+    This function handles the full transformation pipeline:
+    1. Get output file paths
+    2. Check if data already exists (skip if it does)
+    3. Convert lists of dicts to DataFrames
+    4. Upsert to CSV files
+    
+    Args:
+        wages_data: List of row dicts for wages data
+        expenses_data: List of row dicts for expenses data
+        state_fips: State FIPS code
+        county_fips: County FIPS code
+        index_cache: Optional cache to check existence and update after writing
+        year: Optional year (defaults to current year)
+        
+    Returns:
+        True if data was saved, False if it already existed
+    '''
+    if year is None:
+        from datetime import datetime
+        year = datetime.now().year
+    
+    # Get file paths
+    wages_filename, expenses_filename = get_output_paths(state_fips, year)
+    
+    # Check if county data already exists in both files using cache
+    if index_cache:
+        wages_has_county = index_cache.has_county(wages_filename, county_fips)
+        expenses_has_county = index_cache.has_county(expenses_filename, county_fips)
+        
+        if wages_has_county and expenses_has_county:
+            logger.debug(format_log_with_metadata(
+                f"County {state_fips + county_fips} already exists in both files. Skipping.",
+                year, state_fips, county_fips))
+            return False
+    
+    # Convert lists of dicts to DataFrames
+    wages_df = table_to_dataframe(wages_data)
+    expenses_df = table_to_dataframe(expenses_data)
+    
+    # Upsert to CSV files
+    upsert_to_csv(wages_df, wages_filename, county_fips, index_cache, year, state_fips)
+    upsert_to_csv(expenses_df, expenses_filename, county_fips, index_cache, year, state_fips)
+    
+    return True
