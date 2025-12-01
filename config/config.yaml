@@ -10,6 +10,7 @@ scraping:
   min_delay_seconds: 1.0
   max_delay_seconds: 3.0
   min_success_rate: 0.8
+  cache_ttl_days: 30
 # State Configuration
 target_state:
   #state_fips: "34"

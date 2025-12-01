@@ -27,6 +27,7 @@ class ScrapingConfig(BaseModel):
     min_delay_seconds: float = 1.0
     max_delay_seconds: float = 3.0
     min_success_rate: float = 0.8
+    cache_ttl_days: int = 30
 
     @field_validator('base_url')
     def scrape_url_not_empty(cls, v: str) -> str:
