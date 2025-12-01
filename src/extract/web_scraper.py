@@ -5,6 +5,13 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+import random
+
+HEADERS = {
+    'User-Agent': 'MIT-WageETL/1.0 (Educational Project)',
+    'Accept': 'text/html,application/xhtml+xml',
+    'Accept-Language': 'en-US,en;q=0.9',
+}
 
 settings = get_settings()
 logger = get_logger(module=__name__)
@@ -19,7 +26,7 @@ def get_page(url, timeout=30) -> requests.Response:
     '''
     logger.info(f'Fetching data from {url}')
     try:
-        response = requests.get(url, timeout=timeout)
+        response = requests.get(url, timeout=timeout, headers=HEADERS)
         response.raise_for_status()
         logger.info(
             f'Succesfully fetched data (Status: {response.status_code})')
