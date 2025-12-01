@@ -134,6 +134,30 @@ def scrape_county(state_fips: str, county_fips: str) -> None:
     Scrape a specific county from a specified state
     '''
     logger.debug(f'Scraping county {county_fips}')
+    current_year = datetime.now().year
+    output_path = settings.raw_dir / str(current_year)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    wages_filename = output_path / Path(f'wage_rates_{state_fips}.csv')
+    expenses_filename = output_path / \
+        Path(f'expense_breakdown_{state_fips}.csv')
+    
+    # Check if county data already exists in both files
+    county_fips_str = str(county_fips).zfill(3)
+    if wages_filename.exists() and expenses_filename.exists():
+        wages_df_check = pd.read_csv(wages_filename, dtype={'county_fips': str})
+        expenses_df_check = pd.read_csv(expenses_filename, dtype={'county_fips': str})
+        
+        wages_has_county = 'county_fips' in wages_df_check.columns and \
+            county_fips_str in wages_df_check['county_fips'].values
+        expenses_has_county = 'county_fips' in expenses_df_check.columns and \
+            county_fips_str in expenses_df_check['county_fips'].values
+        
+        if wages_has_county and expenses_has_county:
+            logger.debug(f"County {county_fips} already exists in both CSV files. Skipping scrape.")
+            return
+    
+    # Only fetch and scrape if county doesn't exist
     base_url = settings.scraping.base_url
     url = f"{base_url}/counties/{state_fips + county_fips}"
     page = get_page(url)
@@ -141,19 +165,13 @@ def scrape_county(state_fips: str, county_fips: str) -> None:
     if len(tables) < 2:
         logger.error("Expected at least 2 tables!")
         return
-    current_year = datetime.now().year
-    output_path = settings.raw_dir / str(current_year)
-    output_path.mkdir(parents=True, exist_ok=True)
-
+    
     wages_df = process_table(tables[0], county_fips)
     expenses_df = process_table(tables[1], county_fips)
-    wages_filename = output_path / Path(f'wage_rates_{state_fips}.csv')
-    expenses_filename = output_path / \
-        Path(f'expense_breakdown_{state_fips}.csv')
 
-    logger.info(f"Upserting county {county_fips} into {wages_filename}")
+    logger.debug(f"Upserting county {county_fips} into {wages_filename}")
     upsert_to_csv(wages_df, wages_filename, county_fips)
-    logger.info(f"Upserting county {county_fips} into {expenses_filename}")
+    logger.debug(f"Upserting county {county_fips} into {expenses_filename}")
     upsert_to_csv(expenses_df, expenses_filename, county_fips)
 
 
@@ -163,5 +181,5 @@ def scrape_all_counties(state_fips: str, county_codes: list[str]) -> None:
     '''
     logger.debug(f'Scraping all counties')
     for county_fips in county_codes:
-        logger.info(f"Processing county FIPS: {county_fips}")
+        logger.debug(f"Processing county FIPS: {county_fips}")
         scrape_county(state_fips, county_fips)
