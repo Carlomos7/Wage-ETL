@@ -8,6 +8,7 @@ import time
 
 from config.logging import get_logger
 from config.settings import get_settings
+from src.extract.scrapers.scraper_cache import ScraperCache
 
 HEADERS = {
     'User-Agent': 'MIT-WageETL/1.0 (Educational Project)',
@@ -18,16 +19,19 @@ HEADERS = {
 settings = get_settings()
 logger = get_logger(module=__name__)
 
+
 class BaseScraper(ABC):
     '''
     Abstract base class for scrapers.
     '''
 
-    def __init__(self):
+    def __init__(self, use_cache: bool = True):
         self.settings = get_settings()
         self.logger = get_logger(module=self.__class__.__name__)
-    
-    def fetch_with_retry(self,url: str) -> requests.Response:
+        self.use_cache = use_cache
+        self._cache = ScraperCache() if use_cache else None
+
+    def fetch_with_retry(self, url: str) -> requests.Response:
         '''
         Fetch URL with exponential backoff retry logic.
         '''
@@ -74,13 +78,34 @@ class BaseScraper(ABC):
                 raise
         raise RequestException(
             f"Failed to fetch {url} after {max_retries} attempts")
-    
+
     def get_page(self, url: str) -> requests.Response:
         '''
-        Get the page from the URL.
+        Get the page from the URL, using cache if available.
         '''
         self.logger.info(f'Fetching data from {url}')
-        return self.fetch_with_retry(url)
+
+        # Check cache first
+        if self._cache:
+            cached_content = self._cache.get(url)
+            if cached_content:
+                self.logger.info(f'Using cached response for {url}')
+                # Create a mock response object with cached content
+                response = requests.Response()
+                response._content = cached_content
+                response.status_code = 200
+                response.url = url
+                response.encoding = 'utf-8'
+                return response
+
+        # Fetch from network
+        response = self.fetch_with_retry(url)
+
+        # Cache the response
+        if self._cache:
+            self._cache.set(url, response.content)
+
+        return response
 
     @abstractmethod
     def parse(self, response: requests.Response, **kwargs) -> dict:
