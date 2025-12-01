@@ -22,6 +22,12 @@ class ScrapingConfig(BaseModel):
     Web scraping configuration.
     '''
     base_url: str
+    max_retries: int = 3
+    timeout_seconds: int = 30
+    min_delay_seconds: float = 1.0
+    max_delay_seconds: float = 3.0
+    min_success_rate: float = 0.8
+
     @field_validator('base_url')
     def scrape_url_not_empty(cls, v: str) -> str:
         '''Validate the scraping base URL is not empty.'''

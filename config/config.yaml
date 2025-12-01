@@ -1,8 +1,11 @@
 # API Configuration
-api:
-  base_url: "https://api.census.gov/data/2023/acs/acs5"
-  # https://api.census.gov/data/2023/acs/acs5?get=NAME&for=county:*&in=state:34
-  # https://api.census.gov/data/2023/acs/acs5?get=NAME&for=state:34
+scraping:
+  base_url: "https://livingwage.mit.edu"
+  max_retries: 3
+  timeout_seconds: 30
+  min_delay_seconds: 1.0
+  max_delay_seconds: 3.0
+  min_success_rate: 0.8
 
 # Web Scraping Configuration
 scraping:
