@@ -2,6 +2,7 @@
 Abstract base class for scrapers.
 '''
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 import requests
 from requests.exceptions import RequestException, HTTPError, Timeout, ConnectionError
 import time
@@ -30,6 +31,8 @@ class BaseScraper(ABC):
         self.logger = get_logger(module=self.__class__.__name__)
         self.use_cache = use_cache
         self._cache = ScraperCache() if use_cache else None
+        self._session = requests.Session()
+        self._session.headers.update(HEADERS)
 
     def fetch_with_retry(self, url: str) -> requests.Response:
         '''
@@ -43,7 +46,7 @@ class BaseScraper(ABC):
             try:
                 self.logger.debug(
                     f'Attempt {attempt + 1} of {max_retries} to fetch {url}')
-                response = requests.get(url, timeout=timeout, headers=HEADERS)
+                response = self._session.get(url, timeout=timeout)
                 response.raise_for_status()
                 self.logger.info(
                     f'Successfully fetched data (Status: {response.status_code})')
@@ -90,12 +93,14 @@ class BaseScraper(ABC):
             cached_content = self._cache.get(url)
             if cached_content:
                 self.logger.info(f'Using cached response for {url}')
-                # Create a mock response object with cached content
+                # Create a structured response object that mimics a real network response
                 response = requests.Response()
                 response._content = cached_content
                 response.status_code = 200
                 response.url = url
                 response.encoding = 'utf-8'
+                response.reason = "OK"
+                response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 return response
 
         # Fetch from network
@@ -106,9 +111,15 @@ class BaseScraper(ABC):
             self._cache.set(url, response.content)
 
         return response
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc, tb):
+        self._session.close()
 
     @abstractmethod
-    def parse(self, response: requests.Response, **kwargs) -> dict:
+    def parse(self, response: requests.Response, **kwargs) -> Dict[str, Any]:
         '''
         Parse the response and return the extracted data.
         '''
