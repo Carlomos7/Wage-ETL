@@ -25,12 +25,12 @@ class ScrapeResult:
     error: Optional[str] = None
 
 
-def scrape_county_with_scraper(scraper: WageScraper, state_fips: str, county_fips: str) -> ScrapeResult:
+def scrape_county_with_session(scraper: WageScraper, state_fips: str, county_fips: str) -> ScrapeResult:
     '''
-    Internal function to scrape a county using an existing scraper instance.
+    Internal function to scrape a county using an existing scraper session.
 
     Args:
-        scraper: WageScraper instance to use
+        session: requests.Session instance to use
         state_fips: State FIPS code
         county_fips: County FIPS code
         
@@ -87,4 +87,4 @@ def scrape_county(state_fips: str, county_fips: str) -> ScrapeResult:
         ScrapeResult with extracted data (wages_data and expenses_data)
     '''
     with WageScraper() as scraper:
-        return scrape_county_with_scraper(scraper, state_fips, county_fips)
+        return scrape_county_with_session(scraper, state_fips, county_fips)
