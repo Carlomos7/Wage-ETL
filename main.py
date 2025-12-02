@@ -4,7 +4,7 @@ from datetime import datetime
 import random
 import time
 
-from src.extract import scrape_county, get_county_codes
+from src.extract import scrape_county, scrape_county_with_session, get_county_codes
 from src.extract.scrapers import WageScraper
 from src.transform import CSVIndexCache, transform_and_save
 
@@ -41,8 +41,7 @@ def main():
     with WageScraper() as scraper:
         for county_fips in county_codes:
             # Extract: Scrape the data
-            from src.extract import scrape_county_with_scraper
-            scrape_result = scrape_county_with_scraper(scraper, state_fips, county_fips)
+            scrape_result = scrape_county_with_session(scraper, state_fips, county_fips)
             
             # Transform: Save the data if extraction was successful
             if scrape_result.success and scrape_result.wages_data and scrape_result.expenses_data:
