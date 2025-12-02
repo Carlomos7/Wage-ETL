@@ -3,10 +3,10 @@ Scraper for the MIT Living Wage Calculator.
 '''
 import requests
 from bs4 import BeautifulSoup
-from src.extract.scrapers.base import BaseScraper
+from src.extract.scrapers.base_scraper import WebScraperBase
 
 
-class WageScraper(BaseScraper):
+class WageScraper(WebScraperBase):
     '''
     Scraper for the MIT Living Wage Calculator.
     '''
