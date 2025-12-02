@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 from unittest.mock import patch, Mock
 
-from src.extract.csv_storage import CSVIndexCache, upsert_to_csv
+from src.transform.csv_utils import CSVIndexCache, upsert_to_csv
 
 
 class TestCSVIndexCache:

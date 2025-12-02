@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 from requests.exceptions import Timeout, HTTPError, RequestException
-from src.extract.web_scraper import scrape_county, ScrapeResult
+from src.extract.scraping import scrape_county, ScrapeResult
 from src.extract.scrapers import WageScraper
 
 
@@ -22,7 +22,7 @@ class TestWageScraperFetchWithRetry:
         assert result == mock_response
         scraper._session.get.assert_called_once()
 
-    @patch('src.extract.scrapers.base.time.sleep')
+    @patch('src.extract.scrapers.base_scraper.time.sleep')
     def test_retry_on_timeout(self, mock_sleep):
         """Should retry on timeout and succeed on second attempt."""
         mock_response = Mock()
@@ -56,19 +56,17 @@ class TestWageScraperFetchWithRetry:
 class TestScrapeCounty:
     """Tests for the scrape_county function."""
 
-    @patch('src.extract.web_scraper.WageScraper')
-    @patch('pathlib.Path.exists')
-    def test_returns_scrape_result_on_failure(self, mock_exists, mock_scraper_class):
+    @patch('src.extract.scraping.WageScraper')
+    @patch('src.extract.caching.scraper_cache.ScraperCache.get')
+    def test_returns_scrape_result_on_failure(self, mock_get, mock_scraper_class):
         """Should return ScrapeResult with error on failure."""
-        mock_exists.return_value = False
+        mock_get.return_value = None
         
-        mock_scraper = Mock()
+        mock_scraper = MagicMock()
         mock_scraper.build_url.return_value = "http://example.com"
         mock_scraper.get_page.side_effect = RequestException("Connection failed")
-        
-        # Make the mock support context manager protocol
-        mock_scraper.__enter__ = Mock(return_value=mock_scraper)
-        mock_scraper.__exit__ = Mock(return_value=None)
+        # Make __enter__ return the same mock_scraper instance
+        mock_scraper.__enter__.return_value = mock_scraper
         mock_scraper_class.return_value = mock_scraper
 
         result = scrape_county("34", "001")
