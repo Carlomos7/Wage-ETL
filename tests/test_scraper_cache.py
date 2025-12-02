@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timedelta
 import json
 
-from src.extract.scrapers.scraper_cache import ScraperCache
+from src.extract.caching.scraper_cache import ScraperCache
 
 
 class TestScraperCache:
@@ -23,7 +23,7 @@ class TestScraperCache:
         url = "http://example.com/test"
         content = b"<html>Test content</html>"
 
-        temp_cache.set(url, content)
+        temp_cache.store(url, content)
         result = temp_cache.get(url)
 
         assert result == content
@@ -34,7 +34,7 @@ class TestScraperCache:
         content = b"<html>Old content</html>"
         
         # Manually create an expired cache entry
-        cache_path = temp_cache._get_cache_path(url)
+        cache_path = temp_cache._resolve_cache_path(url)
         expired_time = datetime.now() - timedelta(days=10)
         
         cached_data = {
@@ -52,8 +52,8 @@ class TestScraperCache:
     def test_clear_removes_all_files(self, temp_cache):
         """Should remove all cached files."""
         # Add some cached items
-        temp_cache.set("http://example.com/1", b"content1")
-        temp_cache.set("http://example.com/2", b"content2")
+        temp_cache.store("http://example.com/1", b"content1")
+        temp_cache.store("http://example.com/2", b"content2")
         
         count = temp_cache.clear()
         
@@ -65,14 +65,14 @@ class TestScraperCache:
         """Same URL should always produce same cache key."""
         url = "http://example.com/test"
         
-        key1 = temp_cache._get_cache_key(url)
-        key2 = temp_cache._get_cache_key(url)
+        key1 = temp_cache._compute_cache_key(url)
+        key2 = temp_cache._compute_cache_key(url)
         
         assert key1 == key2
 
     def test_different_urls_have_different_keys(self, temp_cache):
         """Different URLs should have different cache keys."""
-        key1 = temp_cache._get_cache_key("http://example.com/page1")
-        key2 = temp_cache._get_cache_key("http://example.com/page2")
+        key1 = temp_cache._compute_cache_key("http://example.com/page1")
+        key2 = temp_cache._compute_cache_key("http://example.com/page2")
         
         assert key1 != key2
