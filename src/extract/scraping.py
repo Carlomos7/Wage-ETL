@@ -73,7 +73,7 @@ def scrape_county_with_session(scraper: WageScraper, state_fips: str, county_fip
 
     except Exception as e:
         logger.error(format_log_with_metadata(
-            f"Unexpected error scraping county {full_fips}: {e}",
+            f"Scrape failed: {e}",
             current_year, state_fips, county_fips))
         return ScrapeResult(fips_code=full_fips, success=False, error=str(e))
 
