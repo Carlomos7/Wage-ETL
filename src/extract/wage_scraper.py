@@ -14,7 +14,7 @@ logger = get_logger(module=__name__)
 class WageExtractor:
     """
     Extracts wage and expense data from the Wage Calculator.
-    
+
     Uses HttpClient for HTTP operations with caching and retry logic.
     """
 
@@ -39,17 +39,17 @@ class WageExtractor:
     def get_county_data(self, state_fips: str, county_fips: str) -> dict:
         """
         Fetch and parse wage/expense data for a county.
-        
+
         Args:
             state_fips: State FIPS code
             county_fips: County FIPS code
-            
+
         Returns:
             Dict with 'wages_data' and 'expenses_data' (lists of row dicts)
         """
         full_fips = state_fips + county_fips
         endpoint = f"counties/{full_fips}"
-        
+
         content = self._client.get(endpoint)
         return self._parse_page(content, county_fips)
 
@@ -59,7 +59,8 @@ class WageExtractor:
         tables = soup.find_all("table", class_="results_table")
 
         if len(tables) < 2:
-            raise ValueError(f"Expected at least 2 tables, found {len(tables)}")
+            raise ValueError(
+                f"Expected at least 2 tables, found {len(tables)}")
 
         return {
             "wages_data": self._extract_table(tables[0], county_fips),
@@ -84,7 +85,7 @@ class WageExtractor:
                     row += [None] * (len(headers) - len(row))
                 else:
                     row = row[:len(headers)]
-            
+
             row_dict = dict(zip(headers, row))
             row_dict["county_fips"] = county_fips
             extracted.append(row_dict)
@@ -94,7 +95,7 @@ class WageExtractor:
     def _extract_headers(self, table: BeautifulSoup) -> list[str]:
         """Extract column headers from table."""
         theads = table.find_all("thead")
-        
+
         # First row: adult configurations with colspan
         first_row = theads[0].find("tr")
         adult_configs = []
@@ -107,7 +108,7 @@ class WageExtractor:
         # Second row: child counts
         second_row = theads[1].find("tr")
         child_counts = [
-            cell.get_text(strip=True) 
+            cell.get_text(strip=True)
             for cell in second_row.find_all(["td", "th"])
         ]
 

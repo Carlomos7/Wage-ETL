@@ -73,7 +73,7 @@ class ResponseCache:
         }
         with open(cache_path, 'w', encoding='utf-8') as f:
             json.dump(cached, f)
-    
+
     def clear_expired(self) -> int:
         '''
         Clear all expired items from the cache.
@@ -88,11 +88,12 @@ class ResponseCache:
                     cache_file.unlink()
                     count += 1
             except (json.JSONDecodeError, KeyError, ValueError) as e:
-                logger.warning(f"Error clearing expired cache file {cache_file.name}: {e}")
+                logger.warning(
+                    f"Error clearing expired cache file {cache_file.name}: {e}")
                 cache_file.unlink()
                 count += 1
         return count
-    
+
     def clear_all(self) -> int:
         '''
         Remove all items from the cache.

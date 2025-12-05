@@ -11,7 +11,7 @@ from src.extract.http import HttpClient
 class CensusExtractor:
     """
     Extracts county and state data from the Census Bureau API.
-    
+
     Uses HttpClient for HTTP operations with caching and retry logic.
     """
 
@@ -82,7 +82,7 @@ class CensusExtractor:
         fips_map = settings.state_config.fips_map
         for state in states:
             state["state_abbr"] = next(
-                (abbr for abbr, fips in fips_map.items() 
+                (abbr for abbr, fips in fips_map.items()
                  if fips == state["state_fips"]),
                 None,
             )

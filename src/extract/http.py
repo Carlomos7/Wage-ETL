@@ -159,7 +159,7 @@ class HttpClient:
         # Store in cache
         if use_cache and self.cache:
             self.cache.store(cache_key, content)
-        
+
         return content
 
     def __enter__(self):
@@ -167,7 +167,7 @@ class HttpClient:
         Enter the context manager.
         '''
         return self
-    
+
     def __exit__(self, exec_type, exec_val, exec_tb):
         '''
         Exit the context manager.
