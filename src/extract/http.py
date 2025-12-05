@@ -63,15 +63,12 @@ class HttpClient:
         return self._request_counter
 
     def _build_url(self, endpoint: str) -> str:
-        '''
-        Build the full URL for the given endpoint.
-        '''
-        if endpoint.startswith(('http://', 'https://')):
-            url = endpoint
-        else:
-            url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        logger.debug(f"Resolved URL: {url}")
-        return url
+        """Build full URL from endpoint."""
+        if endpoint.startswith(("http://", "https://")):
+            return endpoint
+        if not endpoint:
+            return self.base_url
+        return f"{self.base_url}/{endpoint.lstrip('/')}"
 
     def _build_cache_key(self, endpoint: str, params: Optional[dict[str, Any]] = None) -> str:
         '''
