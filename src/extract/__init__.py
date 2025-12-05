@@ -1,7 +1,33 @@
-'''
-This module contains the extract functions for the application.
-'''
-from src.extract.web_scraper import scrape_county, scrape_all_counties
-from src.extract.api_extractor import get_county_codes
+"""
+Data extraction from web sources and APIs.
+"""
+from src.extract.cache import ResponseCache
+from src.extract.http import HttpClient
+from src.extract.census_api import CensusExtractor
+from src.extract.wage_scraper import WageExtractor
+from src.extract.extract_ops import (
+    ScrapeResult,
+    scrape_county,
+    scrape_county_with_extractor,
+    scrape_state_counties,
+    get_states,
+    get_counties,
+    get_county_codes,
+)
 
-__all__ = ["scrape_county", "scrape_all_counties", "get_county_codes"]
+__all__ = [
+    # Classes
+    "ResponseCache",
+    "HttpClient",
+    "CensusExtractor",
+    "WageExtractor",
+    # Types
+    "ScrapeResult",
+    # Functions
+    "scrape_county",
+    "scrape_county_with_extractor",
+    "scrape_state_counties",
+    "get_states",
+    "get_counties",
+    "get_county_codes",
+]

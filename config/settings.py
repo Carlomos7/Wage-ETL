@@ -12,7 +12,7 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from config.models import ApiConfig, ScrapingConfig, TargetStateConfig, StateConfig
+from config.models import ApiConfig, ScrapingConfig, TargetStateConfig, StateConfig, PipelineConfig
 
 # Default paths:
 # TODO: Consider using environment variables to override these paths
@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     data_dir: Path = base_dir / "data"
     raw_dir: Path = data_dir / "raw"
     processed_dir: Path = data_dir / "processed"
+    cache_dir: Path = data_dir / "cache"
 
     # Database settings
     db_host: str
@@ -66,10 +67,13 @@ class Settings(BaseSettings):
     db_driver: str = "psycopg2"
 
     # Configurations from YAML
-    api: ApiConfig = Field(default_factory=ApiConfig)
-    scraping: ScrapingConfig = Field(default_factory=ScrapingConfig)
-    target_state: TargetStateConfig = Field(default_factory=TargetStateConfig)
+    api: ApiConfig
+    scraping: ScrapingConfig
+    target_state: TargetStateConfig
+    pipeline: PipelineConfig
     state_config: StateConfig = Field(default_factory=_load_state_config)
+    
+
     # Customize settings source priority
     model_config = SettingsConfigDict(
         env_file=str(_DEFAULT_ENV_FILE),
@@ -130,7 +134,7 @@ class Settings(BaseSettings):
         '''
         Ensure all required directories exist.
         '''
-        for dir in [self.raw_dir, self.processed_dir, self.log_dir]:
+        for dir in [self.raw_dir, self.processed_dir, self.log_dir, self.cache_dir]:
             dir.mkdir(parents=True, exist_ok=True)
     
     def __init__(self, **data):

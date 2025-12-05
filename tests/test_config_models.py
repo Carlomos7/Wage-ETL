@@ -1,31 +1,107 @@
+"""
+Tests for configuration models.
+"""
 import pytest
 from pydantic import ValidationError
-from config.models import ApiConfig, ScrapingConfig, TargetStateConfig
+from config.models import (
+    HttpClientConfig,
+    ApiConfig,
+    ScrapingConfig,
+    PipelineConfig,
+    TargetStateConfig,
+    StateConfig,
+)
 
-def test_api_config_valid_data():
-    '''Test the API configuration with valid data.'''
-    test_url = "https://api.census.gov/data/2023/acs/acs5"  
-    api_config = ApiConfig(base_url=test_url)
-    assert api_config.base_url == test_url
 
-def test_api_config_invalid_data():
-    '''Test the API configuration with invalid data.'''
-    with pytest.raises(ValidationError):
-        ApiConfig(base_url="")
+class TestHttpClientConfig:
+    """Tests for HttpClientConfig."""
 
-def test_scraping_config_valid_data():
-    '''Test the scraping configuration with valid data.'''
-    test_url = "https://livingwage.mit.edu"
-    scraping_config = ScrapingConfig(base_url=test_url)
-    assert scraping_config.base_url == test_url
+    def test_valid_data(self):
+        """Test HttpClientConfig with valid data."""
+        config = HttpClientConfig(base_url="https://example.com")
+        assert config.base_url == "https://example.com"
+        assert config.max_retries == 3
+        assert config.timeout_seconds == 30
 
-def test_scraping_config_invalid_data():
-    '''Test the scraping configuration with invalid data.'''
-    with pytest.raises(ValidationError):
-        ScrapingConfig(base_url="")
+    def test_invalid_empty_url(self):
+        """Test HttpClientConfig with empty URL."""
+        with pytest.raises(ValidationError):
+            HttpClientConfig(base_url="")
 
-def test_target_state_config_valid_data():
-    '''Test the target state configuration with valid data.'''
-    test_fips = "34"
-    target_state_config = TargetStateConfig(state_fips=test_fips)
-    assert target_state_config.state_fips == test_fips
+
+class TestApiConfig:
+    """Tests for ApiConfig."""
+
+    def test_valid_data(self):
+        """Test ApiConfig with valid data."""
+        api_config = ApiConfig(base_url="https://api.census.gov/data/2023/acs/acs5")
+        assert api_config.base_url == "https://api.census.gov/data/2023/acs/acs5"
+        assert api_config.cache_ttl_days == 90
+
+    def test_invalid_empty_url(self):
+        """Test ApiConfig with empty URL."""
+        with pytest.raises(ValidationError):
+            ApiConfig(base_url="")
+
+
+class TestScrapingConfig:
+    """Tests for ScrapingConfig."""
+
+    def test_valid_data(self):
+        """Test ScrapingConfig with valid data."""
+        scraping_config = ScrapingConfig(base_url="https://livingwage.mit.edu")
+        assert scraping_config.base_url == "https://livingwage.mit.edu"
+        assert scraping_config.min_delay_seconds == 1.0
+        assert scraping_config.max_delay_seconds == 3.0
+
+    def test_invalid_delay_range(self):
+        """Test ScrapingConfig with invalid delay range."""
+        with pytest.raises(ValidationError):
+            ScrapingConfig(
+                base_url="https://example.com",
+                min_delay_seconds=5.0,
+                max_delay_seconds=2.0,
+            )
+
+
+class TestPipelineConfig:
+    """Tests for PipelineConfig."""
+
+    def test_valid_data(self):
+        """Test PipelineConfig with valid data."""
+        config = PipelineConfig()
+        assert config.min_success_rate == 0.8
+
+    def test_invalid_success_rate(self):
+        """Test PipelineConfig with invalid success rate."""
+        with pytest.raises(ValidationError):
+            PipelineConfig(min_success_rate=1.5)
+
+
+class TestTargetStateConfig:
+    """Tests for TargetStateConfig."""
+
+    def test_valid_data(self):
+        """Test TargetStateConfig with valid data."""
+        config = TargetStateConfig(state_abbr="NJ")
+        assert config.state_abbr == "NJ"
+
+    def test_invalid_empty_abbr(self):
+        """Test TargetStateConfig with empty abbreviation."""
+        with pytest.raises(ValidationError):
+            TargetStateConfig(state_abbr="")
+
+
+class TestStateConfig:
+    """Tests for StateConfig."""
+
+    def test_valid_data(self):
+        """Test StateConfig with valid FIPS map."""
+        fips_map = {"AL": "01", "AK": "02"}
+        state_config = StateConfig(fips_map=fips_map)
+        assert state_config.fips_map == fips_map
+
+    def test_invalid_empty_fips_map(self):
+        """Test StateConfig with empty FIPS map."""
+        with pytest.raises(ValidationError):
+            StateConfig(fips_map={})
