@@ -13,6 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
+    # TEMPORARY ENVIRONMENT VARIABLES
     env:
       ENVIRONMENT: testing
       DB_HOST: localhost
