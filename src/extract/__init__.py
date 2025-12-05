@@ -1,21 +1,33 @@
 """
-Extract module for ETL pipeline.
-
-Handles data extraction from web sources and APIs.
+Data extraction from web sources and APIs.
 """
-from src.extract.scraping import (
+from src.extract.cache import ResponseCache
+from src.extract.http import HttpClient
+from src.extract.census_api import CensusExtractor
+from src.extract.wage_scraper import WageExtractor
+from src.extract.extract_ops import (
+    ScrapeResult,
     scrape_county,
-    scrape_county_with_session,
-    ScrapeResult
+    scrape_county_with_extractor,
+    scrape_state_counties,
+    get_states,
+    get_counties,
+    get_county_codes,
 )
-from src.extract.api_extractor import get_county_codes
-from src.extract.scrapers import WebScraperBase, WageScraper
 
 __all__ = [
-    "scrape_county",
-    "scrape_county_with_session",
-    "get_county_codes",
+    # Classes
+    "ResponseCache",
+    "HttpClient",
+    "CensusExtractor",
+    "WageExtractor",
+    # Types
     "ScrapeResult",
-    "WebScraperBase",
-    "WageScraper",
+    # Functions
+    "scrape_county",
+    "scrape_county_with_extractor",
+    "scrape_state_counties",
+    "get_states",
+    "get_counties",
+    "get_county_codes",
 ]

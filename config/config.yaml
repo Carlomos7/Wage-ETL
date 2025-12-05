@@ -3,20 +3,24 @@ api:
   base_url: "https://api.census.gov/data/2023/acs/acs5"
   max_retries: 3
   timeout_seconds: 30
-  rate_limit_delay: 1.0
   cache_ttl_days: 90
-  # https://api.census.gov/data/2023/acs/acs5?get=NAME&for=county:*&in=state:34
-  # https://api.census.gov/data/2023/acs/acs5?get=NAME&for=state:34
+  ssl_verify: true
+  # proxies: null  # Optional
+
+# Scraping Configuration
 scraping:
   base_url: "https://livingwage.mit.edu"
   max_retries: 3
   timeout_seconds: 30
+  cache_ttl_days: 30
+  ssl_verify: true
   min_delay_seconds: 1.0
   max_delay_seconds: 3.0
+
+# Pipeline Configuration
+pipeline:
   min_success_rate: 0.8
-  cache_ttl_days: 30
-# State Configuration
+
+# Target State
 target_state:
-  #state_fips: "34"
-  # state_name: "New Jersey"
   state_abbr: "NJ"

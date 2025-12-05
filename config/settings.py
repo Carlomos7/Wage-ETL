@@ -12,7 +12,7 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from config.models import ApiConfig, ScrapingConfig, TargetStateConfig, StateConfig
+from config.models import ApiConfig, ScrapingConfig, TargetStateConfig, StateConfig, PipelineConfig
 
 # Default paths:
 # TODO: Consider using environment variables to override these paths
@@ -67,10 +67,12 @@ class Settings(BaseSettings):
     db_driver: str = "psycopg2"
 
     # Configurations from YAML
-    api: ApiConfig = Field(default_factory=ApiConfig)
-    scraping: ScrapingConfig = Field(default_factory=ScrapingConfig)
-    target_state: TargetStateConfig = Field(default_factory=TargetStateConfig)
+    api: ApiConfig
+    scraping: ScrapingConfig
+    target_state: TargetStateConfig
+    pipeline: PipelineConfig
     state_config: StateConfig = Field(default_factory=_load_state_config)
+    
 
     # Customize settings source priority
     model_config = SettingsConfigDict(
