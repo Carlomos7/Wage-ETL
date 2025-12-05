@@ -21,7 +21,10 @@ class CensusExtractor:
 
         cache = None
         if use_cache:
-            cache = ResponseCache(ttl_days=api_config.cache_ttl_days)
+            cache_dir = settings.cache_dir / "census"
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cache = ResponseCache(cache_dir=cache_dir,
+                                  ttl_days=api_config.cache_ttl_days)
             cache.clear_expired()
 
         self._client = HttpClient(
