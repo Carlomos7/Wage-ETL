@@ -136,7 +136,7 @@ class CensusExtractor:
     # Public API
 
     def get_counties(self) -> list[dict[str, str]]:
-        """Get all counties for a specific state, a list of states, or all states."""
+        """Get all counties for the target states."""
         params_base = self._base_params("county")
 
         results = []
