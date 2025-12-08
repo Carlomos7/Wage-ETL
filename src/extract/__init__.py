@@ -11,7 +11,7 @@ from src.extract.extract_ops import (
     scrape_county_with_extractor,
     scrape_state_counties,
     get_states,
-    get_counties,
+    get_all_counties,
     get_county_codes,
 )
 
@@ -28,6 +28,6 @@ __all__ = [
     "scrape_county_with_extractor",
     "scrape_state_counties",
     "get_states",
-    "get_counties",
+    "get_all_counties",
     "get_county_codes",
 ]

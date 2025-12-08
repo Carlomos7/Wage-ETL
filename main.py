@@ -16,15 +16,16 @@ def main():
     logger.info(f"Settings: {settings.model_dump_json(indent=4)}")
 
     # Get target state
-    target_state = settings.target_state.state_abbr
+    target_state = settings.pipeline.target_states[0]
     state_fips = settings.state_config.fips_map.get(target_state)
     if not state_fips:
         logger.error(f"State FIPS not found for: {target_state}")
         return
 
     # Get county codes
-    county_codes = get_county_codes(state_fips)
+    county_codes = get_county_codes()
     current_year = datetime.now().year
+    logger.info(f"County codes: {county_codes}")
 
     logger.info(
         f"[year={current_year}][state={state_fips}] "

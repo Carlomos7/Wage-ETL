@@ -49,10 +49,12 @@ class WageExtractor:
         Returns:
             Dict with 'wages_data' and 'expenses_data' (lists of row dicts)
         """
+        state_fips = str(state_fips).zfill(2)
+        county_fips = str(county_fips).zfill(3)
         full_fips = state_fips + county_fips
         endpoint = f"counties/{full_fips}"
 
-        content = self._client.get(endpoint)
+        content = self._client.get(endpoint=endpoint)
         return self._parse_page(content, county_fips)
 
     def _parse_page(self, content: bytes, county_fips: str) -> dict:
@@ -98,6 +100,9 @@ class WageExtractor:
         """Extract column headers from table."""
         theads = table.find_all("thead")
 
+        if len(theads) < 2:
+            raise ValueError("Unexpected table header format")
+
         # First row: adult configurations with colspan
         first_row = theads[0].find("tr")
         adult_configs = []
@@ -132,9 +137,12 @@ class WageExtractor:
 
     def _extract_rows(self, table: BeautifulSoup) -> list[list[str]]:
         """Extract data rows from table body."""
+        tbody = table.find("tbody")
+        if tbody is None:
+            return []
         return [
             [cell.get_text(strip=True) for cell in tr.find_all("td")]
-            for tr in table.find("tbody").find_all("tr")
+            for tr in tbody.find_all("tr")
         ]
 
     @property
