@@ -30,7 +30,9 @@ class ApiConfig(HttpClientConfig):
     '''
     Census API configuration.
     '''
-    cache_ttl_days: int = 90
+    dataset: str
+    variables: list[str]
+    county: list[str]
 
 
 class ScrapingConfig(HttpClientConfig):
@@ -52,33 +54,36 @@ class ScrapingConfig(HttpClientConfig):
 
 
 class PipelineConfig(BaseModel):
-    """
-    ETL pipeline orchestration configuration.
-    """
+    '''
+    Pipeline configuration for the ETL process.
+    '''
     min_success_rate: float = 0.8
+    target_states: list[str] | str = "*"  # Allow list OR single string
 
-    @field_validator('min_success_rate')
+    @field_validator("min_success_rate")
     @classmethod
     def validate_success_rate(cls, v: float) -> float:
-        """Ensure success rate is between 0 and 1."""
         if not 0 <= v <= 1:
-            raise ValueError(
-                f"min_success_rate must be between 0 and 1, got {v}")
+            raise ValueError("min_success_rate must be between 0 and 1")
         return v
 
+    @field_validator("target_states")
+    @classmethod
+    def normalize_states(cls, v):
+        """
+        Normalize input so:
+        - "*" becomes ["*"]
+        - "NJ" becomes ["NJ"]
+        - ["NJ", "NY"] stays as ["NJ", "NY"]
+        """
+        if isinstance(v, str):
+            v = v.strip()
+            return ["*"] if v == "*" else [v.upper()]
 
-class TargetStateConfig(BaseModel):
-    '''
-    Target state configuration.
-    '''
-    state_abbr: str
+        if isinstance(v, list):
+            return [item.upper() for item in v]
 
-    @field_validator('state_abbr')
-    def state_abbr_not_empty(cls, v: str) -> str:
-        '''Validate the state abbreviation is not empty.'''
-        if not v:
-            raise ValueError("State abbreviation cannot be empty")
-        return v
+        raise ValueError("target_states must be a string or list of strings")
 
 
 class StateConfig(BaseModel):
@@ -100,6 +105,5 @@ __all__ = [
     "ApiConfig",
     "ScrapingConfig",
     "PipelineConfig",
-    "TargetStateConfig",
     "StateConfig",
 ]
