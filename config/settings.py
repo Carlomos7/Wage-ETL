@@ -12,7 +12,7 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from config.models import ApiConfig, ScrapingConfig, TargetStateConfig, StateConfig, PipelineConfig
+from config.models import ApiConfig, ScrapingConfig, StateConfig, PipelineConfig
 
 # Default paths:
 # TODO: Consider using environment variables to override these paths
@@ -69,7 +69,6 @@ class Settings(BaseSettings):
     # Configurations from YAML
     api: ApiConfig
     scraping: ScrapingConfig
-    target_state: TargetStateConfig
     pipeline: PipelineConfig
     state_config: StateConfig = Field(default_factory=_load_state_config)
     
