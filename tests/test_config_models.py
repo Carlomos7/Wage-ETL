@@ -8,7 +8,6 @@ from config.models import (
     ApiConfig,
     ScrapingConfig,
     PipelineConfig,
-    TargetStateConfig,
     StateConfig,
 )
 
@@ -34,14 +33,27 @@ class TestApiConfig:
 
     def test_valid_data(self):
         """Test ApiConfig with valid data."""
-        api_config = ApiConfig(base_url="https://api.census.gov/data/2023/acs/acs5")
-        assert api_config.base_url == "https://api.census.gov/data/2023/acs/acs5"
-        assert api_config.cache_ttl_days == 90
+        api_config = ApiConfig(
+            base_url="https://api.census.gov/data",
+            dataset="2023/acs/acs5",
+            variables=["NAME"],
+            county=["*"]
+        )
+        assert api_config.base_url == "https://api.census.gov/data"
+        assert api_config.dataset == "2023/acs/acs5"
+        assert api_config.variables == ["NAME"]
+        assert api_config.county == ["*"]
+        assert api_config.cache_ttl_days == 30  # Default from HttpClientConfig
 
     def test_invalid_empty_url(self):
         """Test ApiConfig with empty URL."""
         with pytest.raises(ValidationError):
-            ApiConfig(base_url="")
+            ApiConfig(
+                base_url="",
+                dataset="2023/acs/acs5",
+                variables=["NAME"],
+                county=["*"]
+            )
 
 
 class TestScrapingConfig:
@@ -71,25 +83,13 @@ class TestPipelineConfig:
         """Test PipelineConfig with valid data."""
         config = PipelineConfig()
         assert config.min_success_rate == 0.8
+        assert config.target_states == ["*"]  # Default is "*" which normalizes to ["*"]
 
     def test_invalid_success_rate(self):
         """Test PipelineConfig with invalid success rate."""
         with pytest.raises(ValidationError):
             PipelineConfig(min_success_rate=1.5)
 
-
-class TestTargetStateConfig:
-    """Tests for TargetStateConfig."""
-
-    def test_valid_data(self):
-        """Test TargetStateConfig with valid data."""
-        config = TargetStateConfig(state_abbr="NJ")
-        assert config.state_abbr == "NJ"
-
-    def test_invalid_empty_abbr(self):
-        """Test TargetStateConfig with empty abbreviation."""
-        with pytest.raises(ValidationError):
-            TargetStateConfig(state_abbr="")
 
 
 class TestStateConfig:

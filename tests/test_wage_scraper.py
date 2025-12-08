@@ -93,7 +93,8 @@ class TestWageExtractor:
         
         assert "wages_data" in result
         assert "expenses_data" in result
-        mock_client.get.assert_called_once_with("counties/01001")
+        # Verify endpoint is passed as keyword argument
+        mock_client.get.assert_called_once_with(endpoint="counties/01001")
 
     def test_parse_page(self, sample_html):
         """Test parsing HTML page."""
