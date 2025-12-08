@@ -2,7 +2,7 @@
 Configuration models for the application.
 '''
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 from typing import Optional
 
 
@@ -58,7 +58,7 @@ class PipelineConfig(BaseModel):
     Pipeline configuration for the ETL process.
     '''
     min_success_rate: float = 0.8
-    target_states: list[str] | str = "*"  # Allow list OR single string
+    target_states: list[str] = Field(default=["*"])  # Default normalized to list
 
     @field_validator("min_success_rate")
     @classmethod
@@ -67,7 +67,7 @@ class PipelineConfig(BaseModel):
             raise ValueError("min_success_rate must be between 0 and 1")
         return v
 
-    @field_validator("target_states")
+    @field_validator("target_states", mode="before")
     @classmethod
     def normalize_states(cls, v):
         """
@@ -75,7 +75,10 @@ class PipelineConfig(BaseModel):
         - "*" becomes ["*"]
         - "NJ" becomes ["NJ"]
         - ["NJ", "NY"] stays as ["NJ", "NY"]
+        - None or not provided becomes ["*"]
         """
+        if v is None:
+            return ["*"]
         if isinstance(v, str):
             v = v.strip()
             return ["*"] if v == "*" else [v.upper()]
