@@ -3,6 +3,7 @@ HTTP client for making requests to APIs and web pages.
 '''
 import time
 from typing import Any, Optional
+from urllib.parse import urljoin
 import requests
 from requests.compat import urlencode
 from requests.exceptions import ConnectionError, Timeout, HTTPError, RequestException
@@ -68,7 +69,7 @@ class HttpClient:
             return endpoint
         if not endpoint:
             return self.base_url
-        return f"{self.base_url}/{endpoint.lstrip('/')}"
+        return urljoin(f"{self.base_url}/", endpoint.lstrip("/"))
 
     def _build_cache_key(self, endpoint: str, params: Optional[dict[str, Any]] = None) -> str:
         '''
