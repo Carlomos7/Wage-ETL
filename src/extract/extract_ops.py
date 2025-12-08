@@ -68,13 +68,27 @@ def get_states() -> list[dict]:
         return extractor.get_states()
 
 
-def get_counties(state_fips: str) -> list[dict]:
-    """Get all counties for a state."""
+def get_all_counties() -> list[dict]:
+    """Get all counties for all target states (from YAML)."""
     with CensusExtractor() as extractor:
-        return extractor.get_counties(state_fips)
+        return extractor.get_counties()
 
 
-def get_county_codes(state_fips: str) -> list[str]:
+def get_counties_for_state(state_fips: str) -> list[dict]:
+    """Get all counties for a specific state (from FIPS)."""
+    state_fips = state_fips.zfill(2)
+    with CensusExtractor() as extractor:
+        all_counties = extractor.get_counties()
+        return [c for c in all_counties if c["state_fips"] == state_fips]
+
+
+def get_county_codes_for_state(state_fips: str) -> list[str]:
     """Get county FIPS codes for a state."""
+    counties = get_counties_for_state(state_fips)
+    return [c["county_fips"] for c in counties]
+
+
+def get_county_codes() -> list[str]:
+    """Get county FIPS codes for all states."""
     with CensusExtractor() as extractor:
-        return extractor.get_county_codes(state_fips)
+        return extractor.get_county_codes()

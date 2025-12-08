@@ -1,11 +1,15 @@
 # API Configuration
 api:
-  base_url: "https://api.census.gov/data/2023/acs/acs5"
+  base_url: "https://api.census.gov/data"
+  dataset: "2023/acs/acs5"
+  variables:
+    - "NAME"
+  county:
+    - "*" # all counties
   max_retries: 3
   timeout_seconds: 30
   cache_ttl_days: 90
   ssl_verify: true
-  # proxies: null  # Optional
 
 # Scraping Configuration
 scraping:
@@ -20,7 +24,5 @@ scraping:
 # Pipeline Configuration
 pipeline:
   min_success_rate: 0.8
-
-# Target State
-target_state:
-  state_abbr: "NJ"
+  target_states:
+    - "NJ"

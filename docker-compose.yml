@@ -1,9 +1,8 @@
-name: wage_etl_dev
-# docker compose -f docker-compose.dev.yml down
+name: wage_etl_services
 services:
   db:
     image: postgres:16
-    container_name: dev_db
+    container_name: db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -24,7 +23,7 @@ services:
 
   flyway:
     image: flyway/flyway:11
-    container_name: dev_flyway
+    container_name: flyway
     depends_on:
       db:
         condition: service_healthy
@@ -41,7 +40,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: dev_pgadmin
+    container_name: pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
@@ -57,8 +56,8 @@ services:
       - wage_etl_net
 
 volumes:
-  db_data_dev:
-  pgadmin_data_dev:
+  db_data:
+  pgadmin_data:
 
 networks:
   wage_etl_net:
