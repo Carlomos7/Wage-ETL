@@ -1,6 +1,9 @@
 import pandas as pd
+from src.transform.models import WageRecord, ExpenseRecord
+from src.transform.pandas_ops import dataframe_to_models
 
 NON_FAMILY_COLS = {"category", "county_fips"}
+
 
 def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
     '''
@@ -12,7 +15,7 @@ def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
     if df.empty:
         errors.append("DataFrame is empty")
         return False, errors
-    
+
     # Normalize column names
     col_map = {c.lower(): c for c in df.columns}
     cols_lower = set(col_map.keys())
@@ -20,7 +23,7 @@ def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
     # Required column checks
     if "category" not in cols_lower:
         errors.append("'category' column not found")
-    
+
     # Family configuration columns
     family_cols = [
         col_map[c] for c in cols_lower
@@ -32,6 +35,70 @@ def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
     null_ratio = df.isna().sum().sum() / total_cells
 
     if null_ratio > 0.10:
-        errors.append(f"DataFrame has more than 10% null values ({null_ratio:.2%})")
-    
+        errors.append(
+            f"DataFrame has more than 10% null values ({null_ratio:.2%})")
+
+    return (len(errors) == 0, errors)
+
+
+def _validate_common(df: pd.DataFrame, county_fips: str) -> list[dict]:
+    '''
+    Validate common fields across all data types.
+    '''
+
+    # County FIPS validation
+    errors = []
+    if county_fips not in df.columns:
+        return [{"field": "county_fips", "msg": "county_fips column missing"}]
+
+    # Normalize county FIPS
+    county_fips = str(county_fips).zfill(3)
+    df_fips = df["county_fips"]
+
+    # Validate county FIPS values
+    if not df_fips.eq(county_fips).all():
+        errors.append(
+            {"field": "county_fips", "msg": "county_fips values are inconsistent"})
+
+    return errors
+
+
+def validate_wages(df: pd.DataFrame, county_fips: str) -> tuple[bool, list[dict]]:
+    '''
+    Validate wages data.
+    Args:
+        df: Pandas DataFrame containing wages data
+        county_fips: County FIPS code
+
+    Returns:
+        Tuple containing:
+        - Boolean indicating if validation passed
+        - List of validation errors
+    '''
+    errors = _validate_common(df, county_fips)
+    if errors:
+        return False, errors
+
+    _, model_errors = dataframe_to_models(df, WageRecord)
+    errors.extend(model_errors)
+    return (len(errors) == 0, errors)
+
+
+def validate_expenses(df: pd.DataFrame, county_fips: str) -> tuple[bool, list[dict]]:
+    '''
+    Validate expenses data.
+    Args:
+        df: Pandas DataFrame containing expenses data
+        county_fips: County FIPS code
+
+    Returns:
+        Tuple containing:
+        - Boolean indicating if validation passed
+        - List of validation errors
+    '''
+    errors = _validate_common(df, county_fips)
+    if errors:
+        return False, errors
+    _, model_errors = dataframe_to_models(df, ExpenseRecord)
+    errors.extend(model_errors)
     return (len(errors) == 0, errors)
