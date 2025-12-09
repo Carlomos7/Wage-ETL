@@ -12,6 +12,8 @@ from src.transform.constants import (
     CATEGORY_MAP,
     normalize_category_key,
 )
+from pydantic import BaseModel, ValidationError
+from typing import Type
 
 logger = get_logger(module=__name__)
 
@@ -62,24 +64,28 @@ def clean_currency_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame
         df[col] = pd.to_numeric(cleaned, errors="coerce").fillna(0)
     return df
 
+
 def add_family_config_columns(df: pd.DataFrame, source_col: str) -> pd.DataFrame:
     '''
     Parse family configurations from a source column and create new columns for adults, working adults, and children.
     '''
     df = df.copy()
-    
+
     # Normalize the raw columns
-    normalized = df[source_col].fillna("").astype(str).apply(normalize_header_for_lookup)
+    normalized = df[source_col].fillna("").astype(
+        str).apply(normalize_header_for_lookup)
 
     # Convert each normalized header into metadata dicts
     metadata = normalized.apply(get_family_config_metadata)
 
     # Create output columns (fallback to none)
     df["adults"] = metadata.apply(lambda m: m["adults"] if m else None)
-    df["working_adults"] = metadata.apply(lambda m: m["working_adults"] if m else None)
+    df["working_adults"] = metadata.apply(
+        lambda m: m["working_adults"] if m else None)
     df["children"] = metadata.apply(lambda m: m["children"] if m else None)
 
     return df
+
 
 def normalize_category_column(df: pd.DataFrame, source_col: str, target_col: str) -> pd.DataFrame:
     """
@@ -88,3 +94,19 @@ def normalize_category_column(df: pd.DataFrame, source_col: str, target_col: str
     df = df.copy()
     df[target_col] = df[source_col].apply(lookup_category_value)
     return df
+
+
+def dataframe_to_models(df: pd.DataFrame, model_class: Type[BaseModel]) -> tuple[list[BaseModel], list[dict]]:
+    '''
+    Iterate over dataframe rows and convert to Pydantic models.
+    '''
+    models = []
+    errors = []
+    for index, row in df.iterrows():
+        try:
+            models.append(model_class(**row.to_dict()))
+        except ValidationError as e:
+            errors.append({"row_index": index, "errors": e.errors()})
+        except Exception as e:
+            errors.append({"row_index": index, "errors": [{"msg": str(e)}]})
+    return models, errors
