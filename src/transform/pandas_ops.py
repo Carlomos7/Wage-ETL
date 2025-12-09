@@ -5,15 +5,14 @@ Pandas operations.
 import pandas as pd
 from config.logging import get_logger
 from src.transform.constants import (
-    FAMILY_CONFIG_MAP,
     normalize_header_for_lookup,
     get_family_config_metadata,
     lookup_category_value,
-    CATEGORY_MAP,
     normalize_category_key,
 )
 from pydantic import BaseModel, ValidationError
 from typing import Type
+from src.transform.models import WageRecord, ExpenseRecord
 
 logger = get_logger(module=__name__)
 
@@ -92,7 +91,14 @@ def normalize_category_column(df: pd.DataFrame, source_col: str, target_col: str
     Map category names to normalized values using CATEGORY_MAP.
     """
     df = df.copy()
-    df[target_col] = df[source_col].apply(lookup_category_value)
+    source = df[source_col]
+
+    df[target_col] = (
+        source
+        .apply(normalize_category_key)  # normalize key
+        .apply(lambda key: lookup_category_value(key) or key)  # map or fallback
+    )
+
     return df
 
 
@@ -110,3 +116,72 @@ def dataframe_to_models(df: pd.DataFrame, model_class: Type[BaseModel]) -> tuple
         except Exception as e:
             errors.append({"row_index": index, "errors": [{"msg": str(e)}]})
     return models, errors
+
+
+def _melt_family_configs(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Melt wide family configuration columns into long format.
+    """
+    value_vars = [c for c in df.columns if c.lower() not in [
+        "category", "county_fips"]]
+    return df.melt(
+        id_vars=["category"], value_vars=value_vars, var_name="family", value_name="value"
+    )
+
+
+def normalize_wages(df: pd.DataFrame, county_fips: str, validate: bool = True) -> pd.DataFrame:
+    """
+    Normalize wages data. Melts wide to long format, then orchestrates cleaning functions.
+    """
+    if df.empty:
+        return df
+
+    county_fips = str(county_fips).zfill(3)
+    df.columns = [c.lower() if c in ['Category', 'county_fips']
+                  else c for c in df.columns]
+
+    long_df = _melt_family_configs(df)
+    long_df = add_family_config_columns(long_df, "family")
+    long_df = normalize_category_column(long_df, "category", "wage_type")
+    long_df = clean_currency_columns(long_df, ["value"])
+    long_df = long_df.rename(columns={"value": "hourly_wage"})
+    long_df["county_fips"] = county_fips
+
+    if validate:
+        models, errors = dataframe_to_models(long_df, WageRecord)
+        if errors:
+            logger.warning(f"Wage normalization validation errors: {errors}")
+        else:
+            long_df = pd.DataFrame([m.model_dump() for m in models])
+
+    return long_df.reset_index(drop=True)
+
+
+def normalize_expenses(df: pd.DataFrame, county_fips: str, validate: bool = True) -> pd.DataFrame:
+    """
+    Normalize expenses data. Melts wide to long format, then orchestrates cleaning functions.
+    """
+    if df.empty:
+        return df
+
+    county_fips = str(county_fips).zfill(3)
+    df.columns = [c.lower() if c in ['Category', 'county_fips']
+                  else c for c in df.columns]
+
+    long_df = _melt_family_configs(df)
+    long_df = add_family_config_columns(long_df, "family")
+    long_df = normalize_category_column(
+        long_df, "category", "expense_category")
+    long_df = clean_currency_columns(long_df, ["value"])
+    long_df = long_df.rename(columns={"value": "annual_amount"})
+    long_df["county_fips"] = county_fips
+
+    if validate:
+        models, errors = dataframe_to_models(long_df, ExpenseRecord)
+        if errors:
+            logger.warning(
+                f"Expense normalization validation errors: {errors}")
+        else:
+            long_df = pd.DataFrame([m.model_dump() for m in models])
+
+    return long_df.reset_index(drop=True)
