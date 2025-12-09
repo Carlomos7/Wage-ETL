@@ -2,6 +2,8 @@
 Constants for transform operations.
 """
 
+import re
+
 FAMILY_CONFIG_MAP = {
     "1 Adult": {"adults": 1, "working_adults": 1, "children": 0},
     "1 Adult 1 Child": {"adults": 1, "working_adults": 1, "children": 1},
@@ -48,3 +50,53 @@ def get_family_config_metadata(header: str) -> dict[str, int] | None:
     """
     normalized = normalize_header_for_lookup(header)
     return FAMILY_CONFIG_MAP.get(normalized)
+
+CATEGORY_MAP = {
+    # Wage categories
+    "living wage": "living",
+    "poverty wage": "poverty",
+    "minimum wage": "minimum",
+
+    # Expense categories
+    "food": "food",
+    "child care": "childcare",
+    "childcare": "childcare",
+    "housing": "housing",
+    "transportation": "transportation",
+    "medical": "healthcare",
+    "medical care": "healthcare",
+    "health care": "healthcare",
+    "other": "other",
+    "civic": "civic",
+    "internet & mobile": "internet_mobile",
+    "internet_mobile": "internet_mobile",
+
+    # Derived income categories
+    "required annual income after taxes": "required_after_tax",
+    "annual taxes": "annual_taxes",
+    "required annual income before taxes": "required_before_tax",
+}
+
+def normalize_category_key(text: str) -> str:
+    """
+    Normalize raw category text into a lookup key.
+    """
+    raw = str(text).strip().lower()
+
+    # Clean multiple spaces / punctuation to a single space
+    cleaned = re.sub(r"[^\w]+", " ", raw).strip()
+
+    return cleaned
+
+
+def lookup_category_value(key: str) -> str:
+    """
+    Return the canonical category value if known, otherwise fallback to slugified key.
+    """
+    normalized = normalize_category_key(key)
+
+    if normalized in CATEGORY_MAP:
+        return CATEGORY_MAP[normalized]
+
+    # Fallback slug
+    return normalized.replace(" ", "_")

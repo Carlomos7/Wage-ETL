@@ -8,6 +8,9 @@ from src.transform.constants import (
     FAMILY_CONFIG_MAP,
     normalize_header_for_lookup,
     get_family_config_metadata,
+    lookup_category_value,
+    CATEGORY_MAP,
+    normalize_category_key,
 )
 
 logger = get_logger(module=__name__)
@@ -76,4 +79,12 @@ def add_family_config_columns(df: pd.DataFrame, source_col: str) -> pd.DataFrame
     df["working_adults"] = metadata.apply(lambda m: m["working_adults"] if m else None)
     df["children"] = metadata.apply(lambda m: m["children"] if m else None)
 
+    return df
+
+def normalize_category_column(df: pd.DataFrame, source_col: str, target_col: str) -> pd.DataFrame:
+    """
+    Map category names to normalized values using CATEGORY_MAP.
+    """
+    df = df.copy()
+    df[target_col] = df[source_col].apply(lookup_category_value)
     return df
