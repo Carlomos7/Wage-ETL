@@ -4,6 +4,11 @@ Pandas operations.
 
 import pandas as pd
 from config.logging import get_logger
+from src.transform.constants import (
+    FAMILY_CONFIG_MAP,
+    normalize_header_for_lookup,
+    get_family_config_metadata,
+)
 
 logger = get_logger(module=__name__)
 
@@ -52,4 +57,23 @@ def clean_currency_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame
         )
         # pandas built-in numeric conversion
         df[col] = pd.to_numeric(cleaned, errors="coerce").fillna(0)
+    return df
+
+def add_family_config_columns(df: pd.DataFrame, source_col: str) -> pd.DataFrame:
+    '''
+    Parse family configurations from a source column and create new columns for adults, working adults, and children.
+    '''
+    df = df.copy()
+    
+    # Normalize the raw columns
+    normalized = df[source_col].fillna("").astype(str).apply(normalize_header_for_lookup)
+
+    # Convert each normalized header into metadata dicts
+    metadata = normalized.apply(get_family_config_metadata)
+
+    # Create output columns (fallback to none)
+    df["adults"] = metadata.apply(lambda m: m["adults"] if m else None)
+    df["working_adults"] = metadata.apply(lambda m: m["working_adults"] if m else None)
+    df["children"] = metadata.apply(lambda m: m["children"] if m else None)
+
     return df
