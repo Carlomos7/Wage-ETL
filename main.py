@@ -10,7 +10,7 @@ import pandas as pd
 from config import get_settings
 from config.logging import setup_logging, get_logger, format_log_with_metadata
 
-from src.extract import get_county_codes, scrape_state_counties
+from src.extract import get_county_codes_for_state, scrape_state_counties
 
 from src.transform import (
     normalize_expenses,
@@ -29,26 +29,26 @@ from src.load import (
 )
 
 
-def main():
-    setup_logging()
+def process_state(target_state: str, settings) -> None:
+    """
+    Process a single state through the ETL pipeline.
+    
+    Args:
+        target_state: State abbreviation (e.g., "NY")
+        settings: Application settings
+    """
     logger = get_logger(module=__name__)
-    logger.info("Starting ETL pipeline")
-    settings = get_settings()
-
-    if not test_connection():
-        logger.error("Database connection failed")
-        return
-
-    # Setup
-    target_state = settings.pipeline.target_states[0]
+    
+    # Get state FIPS
     state_fips = settings.state_config.fips_map.get(target_state)
     if not state_fips:
         logger.error(f"Unknown state: {target_state}")
         return
 
-    county_codes = get_county_codes()
+    # Get county codes for this specific state
+    county_codes = get_county_codes_for_state(state_fips)
     current_year = datetime.now().year
-    logger.info(f"Processing {len(county_codes)} counties in {target_state}")
+    logger.info(f"Processing {len(county_codes)} counties in {target_state} (FIPS: {state_fips})")
 
     # Start run
     run_id = start_run(state_fips)
@@ -127,12 +127,39 @@ def main():
 
         end_run(run_id, status, counties_processed, wages_loaded, wages_rejected, expenses_loaded, expenses_rejected)
 
-        logger.info(f"ETL complete: {total_loaded} loaded, {total_rejected} rejected")
+        logger.info(f"ETL complete for {target_state}: {total_loaded} loaded, {total_rejected} rejected")
 
     except Exception as e:
-        logger.error(f"Pipeline failed: {e}")
+        logger.error(f"Pipeline failed for {target_state}: {e}")
         end_run(run_id, "FAILED", counties_processed, error=str(e))
         raise
+
+
+def main():
+    setup_logging()
+    logger = get_logger(module=__name__)
+    logger.info("Starting ETL pipeline")
+    settings = get_settings()
+
+    if not test_connection():
+        logger.error("Database connection failed")
+        return
+
+    # Process each target state
+    target_states = settings.pipeline.target_states
+    logger.info(f"Processing {len(target_states)} states: {', '.join(target_states)}")
+
+    for target_state in target_states:
+        try:
+            logger.info(f"Starting ETL for state: {target_state}")
+            process_state(target_state, settings)
+            logger.info(f"Completed ETL for state: {target_state}")
+        except Exception as e:
+            logger.error(f"Failed to process state {target_state}: {e}")
+            # Continue with next
+            continue
+
+    logger.info("ETL pipeline completed for all states")
 
 
 if __name__ == "__main__":
