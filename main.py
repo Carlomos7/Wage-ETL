@@ -1,3 +1,6 @@
+"""
+ETL Pipeline - extract -> transform -> load.
+"""
 import random
 import time
 from datetime import datetime
@@ -6,131 +9,125 @@ import pandas as pd
 
 from config import get_settings
 from config.logging import setup_logging, get_logger, format_log_with_metadata
-from src.extract import scrape_state_counties, get_county_codes
+
+from src.extract import get_county_codes, scrape_state_counties
+
 from src.transform import (
+    normalize_expenses,
+    normalize_wages,
     table_to_dataframe,
     validate_wide_format_input,
-    normalize_wages,
-    normalize_expenses,
 )
-from src.transform.csv_utils import get_output_paths, save_dataframe_to_csv
+
+from src.load import (
+    bulk_upsert_expenses,
+    bulk_upsert_wages,
+    end_run,
+    load_rejects,
+    start_run,
+    test_connection,
+)
 
 
 def main():
     setup_logging()
     logger = get_logger(module=__name__)
-    logger.info("Starting the application")
+    logger.info("Starting ETL pipeline")
     settings = get_settings()
 
-    # Get target state
+    if not test_connection():
+        logger.error("Database connection failed")
+        return
+
+    # Setup
     target_state = settings.pipeline.target_states[0]
     state_fips = settings.state_config.fips_map.get(target_state)
     if not state_fips:
-        logger.error(f"State FIPS not found for: {target_state}")
+        logger.error(f"Unknown state: {target_state}")
         return
 
-    # Get county codes
     county_codes = get_county_codes()
     current_year = datetime.now().year
+    logger.info(f"Processing {len(county_codes)} counties in {target_state}")
 
-    logger.info(
-        f"[year={current_year}][state={state_fips}] "
-        f"Starting ETL for {len(county_codes)} counties in {target_state}"
-    )
+    # Start run
+    run_id = start_run(state_fips)
 
-    # Rate limiting config
-    min_delay = settings.scraping.min_delay_seconds
-    max_delay = settings.scraping.max_delay_seconds
+    # Accumulators
+    all_wages = []
+    all_expenses = []
+    wage_rejects = []
+    expense_rejects = []
+    counties_processed = 0
 
-    # Accumulate all normalized data
-    all_wages: list[pd.DataFrame] = []
-    all_expenses: list[pd.DataFrame] = []
+    try:
+        # Extract + Transform
+        for result in scrape_state_counties(state_fips, county_codes):
+            county_fips = result.fips_code[-3:]
+            counties_processed += 1
 
-    # Extract and transform
-    results = []
-    for result in scrape_state_counties(state_fips, county_codes):
-        county_fips = result.fips_code[-3:]
+            if result.success:
+                try:
+                    wages_df = table_to_dataframe(result.wages_data)
+                    expenses_df = table_to_dataframe(result.expenses_data)
 
-        if result.success:
-            try:
-                # Convert to DataFrames
-                wages_df = table_to_dataframe(result.wages_data)
-                expenses_df = table_to_dataframe(result.expenses_data)
+                    # Validate
+                    valid, errors = validate_wide_format_input(wages_df)
+                    if not valid:
+                        wage_rejects.append({"raw_data": result.wages_data, "rejection_reason": str(errors)})
+                        continue
 
-                # Pre-transform validation
-                is_valid, errors = validate_wide_format_input(wages_df, 'wages')
-                if not is_valid:
-                    logger.warning(format_log_with_metadata(
-                        f"Invalid wages data: {errors}",
-                        current_year, state_fips, county_fips
-                    ))
-                    results.append(result)
-                    continue
+                    valid, errors = validate_wide_format_input(expenses_df)
+                    if not valid:
+                        expense_rejects.append({"raw_data": result.expenses_data, "rejection_reason": str(errors)})
+                        continue
 
-                is_valid, errors = validate_wide_format_input(expenses_df, 'expenses')
-                if not is_valid:
-                    logger.warning(format_log_with_metadata(
-                        f"Invalid expenses data: {errors}",
-                        current_year, state_fips, county_fips
-                    ))
-                    results.append(result)
-                    continue
+                    # Transform
+                    all_wages.append(normalize_wages(wages_df, county_fips))
+                    all_expenses.append(normalize_expenses(expenses_df, county_fips))
 
-                # Transform
-                wages_normalized = normalize_wages(wages_df, county_fips)
-                expenses_normalized = normalize_expenses(expenses_df, county_fips)
+                    logger.info(format_log_with_metadata(f"OK", current_year, state_fips, county_fips))
 
-                # Accumulate
-                all_wages.append(wages_normalized)
-                all_expenses.append(expenses_normalized)
+                except Exception as e:
+                    logger.error(format_log_with_metadata(f"Transform error: {e}", current_year, state_fips, county_fips))
+                    wage_rejects.append({"raw_data": result.wages_data, "rejection_reason": str(e)})
+            else:
+                logger.warning(format_log_with_metadata(f"Scrape failed: {result.error}", current_year, state_fips, county_fips))
 
-                logger.info(format_log_with_metadata(
-                    f"Processed {result.fips_code}",
-                    current_year, state_fips, county_fips
-                ))
+            time.sleep(random.uniform(settings.scraping.min_delay_seconds, settings.scraping.max_delay_seconds))
 
-            except ValueError as e:
-                logger.error(format_log_with_metadata(
-                    f"Transform failed: {e}",
-                    current_year, state_fips, county_fips
-                ))
+        # Load
+        wages_loaded = 0
+        expenses_loaded = 0
+
+        if all_wages:
+            wages_loaded = bulk_upsert_wages(pd.concat(all_wages, ignore_index=True), run_id)
+
+        if all_expenses:
+            expenses_loaded = bulk_upsert_expenses(pd.concat(all_expenses, ignore_index=True), run_id)
+
+        wages_rejected = load_rejects(wage_rejects, run_id, "stg_wages_rejects") if wage_rejects else 0
+        expenses_rejected = load_rejects(expense_rejects, run_id, "stg_expenses_rejects") if expense_rejects else 0
+
+        # Determine status
+        total_loaded = wages_loaded + expenses_loaded
+        total_rejected = wages_rejected + expenses_rejected
+
+        if total_loaded == 0:
+            status = "FAILED"
+        elif total_rejected > 0:
+            status = "PARTIAL"
         else:
-            logger.warning(format_log_with_metadata(
-                f"Failed: {result.error}",
-                current_year, state_fips, county_fips
-            ))
+            status = "SUCCESS"
 
-        results.append(result)
-        time.sleep(random.uniform(min_delay, max_delay))
+        end_run(run_id, status, counties_processed, wages_loaded, wages_rejected, expenses_loaded, expenses_rejected)
 
-    # Save accumulated data (one file per table)
-    wages_path, expenses_path = get_output_paths(state_fips, current_year)
+        logger.info(f"ETL complete: {total_loaded} loaded, {total_rejected} rejected")
 
-    if all_wages:
-        wages_combined = pd.concat(all_wages, ignore_index=True)
-        save_dataframe_to_csv(wages_combined, wages_path)
-        logger.info(f"Saved {len(wages_combined)} wage records to {wages_path}")
-
-    if all_expenses:
-        expenses_combined = pd.concat(all_expenses, ignore_index=True)
-        save_dataframe_to_csv(expenses_combined, expenses_path)
-        logger.info(f"Saved {len(expenses_combined)} expense records to {expenses_path}")
-
-    # Summary
-    successful = sum(1 for r in results if r.success)
-    total = len(results)
-    success_rate = successful / total if total else 0
-
-    logger.info(
-        f"[year={current_year}][state={state_fips}] "
-        f"ETL complete: {successful}/{total} ({success_rate:.1%})"
-    )
-
-    if success_rate < settings.pipeline.min_success_rate:
-        logger.warning(
-            f"Success rate {success_rate:.1%} below threshold "
-            f"{settings.pipeline.min_success_rate:.0%}"
-        )
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}")
+        end_run(run_id, "FAILED", counties_processed, error=str(e))
+        raise
 
 
 if __name__ == "__main__":
