@@ -22,8 +22,8 @@ dependencies = [
 # pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--disable-warnings", "-q"]
-pythonpath = ["src"]
+# addopts = ["--disable-warnings", "-q"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true
@@ -31,7 +31,6 @@ source = ["src"]
 omit = ["tests/*", "config/*", "sql/*", "data/*", "logs/*"]
 
 [tool.coverage.report]
-skip_covered = true
 show_missing = true
 precision = 2
 
