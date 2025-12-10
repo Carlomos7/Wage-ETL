@@ -39,7 +39,7 @@ services:
       - wage_etl_net
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:latest
     container_name: pgadmin
     restart: unless-stopped
     environment:

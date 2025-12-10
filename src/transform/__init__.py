@@ -8,6 +8,10 @@ from src.transform.models import (
 
 from src.transform.constants import (
     FAMILY_CONFIG_MAP,
+    CATEGORY_MAP,
+)
+
+from src.transform.normalizers import (
     normalize_header_for_lookup,
     get_family_config_metadata,
 )
@@ -34,6 +38,8 @@ __all__ = [
     'ExpenseRecord',
     # Constants
     'FAMILY_CONFIG_MAP',
+    'CATEGORY_MAP'
+    # Normalizers
     'normalize_header_for_lookup',
     'get_family_config_metadata',
     # DataFrame utilities
@@ -41,7 +47,6 @@ __all__ = [
     'add_family_config_columns',
     'normalize_category_column',
     'table_to_dataframe',
-    # DataFrame to Pydantic models
     'dataframe_to_models',
     # Transformations
     'normalize_wages',
