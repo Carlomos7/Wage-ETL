@@ -44,6 +44,10 @@ def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
 def _validate_common(df: pd.DataFrame, county_fips: str) -> list[dict]:
     '''
     Validate common fields across all data types.
+    
+    Args:
+        df: DataFrame to validate
+        county_fips: Full FIPS code (5 digits: state + county)
     '''
 
     # County FIPS validation
@@ -51,9 +55,9 @@ def _validate_common(df: pd.DataFrame, county_fips: str) -> list[dict]:
     if "county_fips" not in df.columns:
         return [{"field": "county_fips", "msg": "county_fips column missing"}]
 
-    # Normalize county FIPS
-    expected_fips = str(county_fips).zfill(3)
-    df_fips = df["county_fips"].astype(str).str.zfill(3)
+    # Normalize county FIPS (expect 5 digits: state + county)
+    expected_fips = str(county_fips).zfill(5)
+    df_fips = df["county_fips"].astype(str).str.zfill(5)
 
     # Validate county FIPS values
     if not df_fips.eq(expected_fips).all():
@@ -68,7 +72,7 @@ def validate_wages(df: pd.DataFrame, county_fips: str) -> tuple[bool, list[dict]
     Validate wages data.
     Args:
         df: Pandas DataFrame containing wages data
-        county_fips: County FIPS code
+        county_fips: Full FIPS code (5 digits: state + county)
 
     Returns:
         Tuple containing:
@@ -89,7 +93,7 @@ def validate_expenses(df: pd.DataFrame, county_fips: str) -> tuple[bool, list[di
     Validate expenses data.
     Args:
         df: Pandas DataFrame containing expenses data
-        county_fips: County FIPS code
+        county_fips: Full FIPS code (5 digits: state + county)
 
     Returns:
         Tuple containing:

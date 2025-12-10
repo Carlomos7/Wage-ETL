@@ -3,10 +3,12 @@ Transform models.
 """
 from typing import Literal
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from datetime import date, datetime
 
 
 class BaseRecord(BaseModel):
     county_fips: str
+    page_updated_at: date
     adults: int
     working_adults: int
     children: int
@@ -15,11 +17,12 @@ class BaseRecord(BaseModel):
     @classmethod
     def validate_county_fips(cls, v: str) -> str:
         """
-        Validate county FIPS code as a zero-padded 3-character string.
+        Validate county FIPS code as a zero-padded 5-character string (state + county).
         """
-        v = str(v).zfill(3)
-        if len(v) != 3 or not v.isdigit():
-            raise ValueError("county_fips must be a 3-digit string")
+        v = str(v).zfill(5)
+        if len(v) != 5 or not v.isdigit():
+            raise ValueError(
+                "county_fips must be a 5-digit string (state + county FIPS)")
         return v
 
     @field_validator("adults")

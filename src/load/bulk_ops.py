@@ -50,25 +50,27 @@ def copy_to_temp(
 
 # Column definitions for staging tables
 WAGES_COLUMNS = ["run_id", "county_fips", "adults",
-                 "working_adults", "children", "wage_type", "hourly_wage"]
+                 "working_adults", "children", "wage_type", "hourly_wage", "page_updated_at"]
 WAGES_COLUMN_DEFS = """
     run_id INTEGER,
-    county_fips VARCHAR(3),
+    county_fips CHAR(5),
     adults INTEGER,
     working_adults INTEGER,
     children INTEGER,
     wage_type VARCHAR(20),
-    hourly_wage NUMERIC(10,2)
+    hourly_wage NUMERIC(10,2),
+    page_updated_at DATE
 """
 
 EXPENSES_COLUMNS = ["run_id", "county_fips", "adults",
-                    "working_adults", "children", "expense_category", "annual_amount"]
+                    "working_adults", "children", "expense_category", "annual_amount", "page_updated_at"]
 EXPENSES_COLUMN_DEFS = """
     run_id INTEGER,
-    county_fips VARCHAR(3),
+    county_fips CHAR(5),
     adults INTEGER,
     working_adults INTEGER,
     children INTEGER,
     expense_category VARCHAR(50),
-    annual_amount NUMERIC(10,2)
+    annual_amount NUMERIC(10,2),
+    page_updated_at DATE
 """
