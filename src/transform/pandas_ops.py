@@ -4,7 +4,7 @@ Pandas operations.
 
 import pandas as pd
 from config.logging import get_logger
-from src.transform.constants import (
+from src.transform.normalizers import (
     normalize_header_for_lookup,
     get_family_config_metadata,
     lookup_category_value,
@@ -43,7 +43,7 @@ def clean_currency_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame
     '''
     Clean multiple currency columns in a DataFrame at once.
 
-    Stips $ and commas, converts to float.
+    Strips $ and commas, converts to float.
     Args:
         df: DataFrame to clean
         columns: List of columns to clean
