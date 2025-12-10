@@ -48,15 +48,15 @@ def _validate_common(df: pd.DataFrame, county_fips: str) -> list[dict]:
 
     # County FIPS validation
     errors = []
-    if county_fips not in df.columns:
+    if "county_fips" not in df.columns:
         return [{"field": "county_fips", "msg": "county_fips column missing"}]
 
     # Normalize county FIPS
-    county_fips = str(county_fips).zfill(3)
-    df_fips = df["county_fips"]
+    expected_fips = str(county_fips).zfill(3)
+    df_fips = df["county_fips"].astype(str).str.zfill(3)
 
     # Validate county FIPS values
-    if not df_fips.eq(county_fips).all():
+    if not df_fips.eq(expected_fips).all():
         errors.append(
             {"field": "county_fips", "msg": "county_fips values are inconsistent"})
 
