@@ -48,10 +48,10 @@ def bulk_upsert_wages(df: pd.DataFrame, run_id: int) -> int:
 
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO stg_wages (run_id, county_fips, adults, working_adults, children, wage_type, hourly_wage)
-                SELECT run_id, county_fips, adults, working_adults, children, wage_type, hourly_wage
+                INSERT INTO stg_wages (run_id, county_fips, adults, working_adults, children, wage_type, hourly_wage, page_updated_at)
+                SELECT run_id, county_fips, adults, working_adults, children, wage_type, hourly_wage, page_updated_at
                 FROM tmp_wages
-                ON CONFLICT (county_fips, adults, working_adults, children, wage_type)
+                ON CONFLICT (county_fips, page_updated_at, adults, working_adults, children, wage_type)
                 DO UPDATE SET
                     run_id = EXCLUDED.run_id,
                     hourly_wage = EXCLUDED.hourly_wage,
@@ -91,10 +91,10 @@ def bulk_upsert_expenses(df: pd.DataFrame, run_id: int) -> int:
 
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO stg_expenses (run_id, county_fips, adults, working_adults, children, expense_category, annual_amount)
-                SELECT run_id, county_fips, adults, working_adults, children, expense_category, annual_amount
+                INSERT INTO stg_expenses (run_id, county_fips, adults, working_adults, children, expense_category, annual_amount, page_updated_at)
+                SELECT run_id, county_fips, adults, working_adults, children, expense_category, annual_amount, page_updated_at
                 FROM tmp_expenses
-                ON CONFLICT (county_fips, adults, working_adults, children, expense_category)
+                ON CONFLICT (county_fips, page_updated_at, adults, working_adults, children, expense_category)
                 DO UPDATE SET
                     run_id = EXCLUDED.run_id,
                     annual_amount = EXCLUDED.annual_amount,
