@@ -23,6 +23,7 @@ class TestBulkUpsertWages:
     @patch('src.load.staging.copy_to_temp')
     def test_bulk_upsert_wages_success(self, mock_copy_to_temp, mock_get_connection):
         """Test successful bulk upsert of wages."""
+        from datetime import date
         # Setup
         df = pd.DataFrame({
             "county_fips": ["001", "002"],
@@ -30,7 +31,8 @@ class TestBulkUpsertWages:
             "working_adults": [1, 2],
             "children": [0, 1],
             "wage_type": ["living", "poverty"],
-            "hourly_wage": [20.0, 15.0]
+            "hourly_wage": [20.0, 15.0],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)]
         })
 
         mock_conn = MagicMock()
@@ -81,6 +83,7 @@ class TestBulkUpsertWages:
     @patch('src.load.staging.copy_to_temp')
     def test_bulk_upsert_wages_column_order(self, mock_copy_to_temp, mock_get_connection):
         """Test that columns are reordered correctly."""
+        from datetime import date
         df = pd.DataFrame({
             "hourly_wage": [20.0],
             "wage_type": ["living"],
@@ -88,6 +91,7 @@ class TestBulkUpsertWages:
             "adults": [1],
             "working_adults": [1],
             "children": [0],
+            "page_updated_at": [date(2024, 1, 15)],
         })
 
         mock_conn = MagicMock()
@@ -103,7 +107,7 @@ class TestBulkUpsertWages:
         # Verify columns are in correct order
         call_df = mock_copy_to_temp.call_args[0][1]
         expected_order = ["run_id", "county_fips", "adults", "working_adults",
-                         "children", "wage_type", "hourly_wage"]
+                         "children", "wage_type", "hourly_wage", "page_updated_at"]
         assert list(call_df.columns) == expected_order
 
 
@@ -114,13 +118,15 @@ class TestBulkUpsertExpenses:
     @patch('src.load.staging.copy_to_temp')
     def test_bulk_upsert_expenses_success(self, mock_copy_to_temp, mock_get_connection):
         """Test successful bulk upsert of expenses."""
+        from datetime import date
         df = pd.DataFrame({
             "county_fips": ["001", "002"],
             "adults": [1, 2],
             "working_adults": [1, 2],
             "children": [0, 1],
             "expense_category": ["food", "housing"],
-            "annual_amount": [5000.0, 12000.0]
+            "annual_amount": [5000.0, 12000.0],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)]
         })
 
         mock_conn = MagicMock()

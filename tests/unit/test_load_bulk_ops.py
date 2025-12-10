@@ -20,6 +20,7 @@ class TestCopyToTemp:
 
     def test_copy_to_temp_success(self):
         """Test successful copy to temp table."""
+        from datetime import date
         # Setup
         df = pd.DataFrame({
             "run_id": [1, 2],
@@ -28,7 +29,8 @@ class TestCopyToTemp:
             "working_adults": [1, 2],
             "children": [0, 1],
             "wage_type": ["living", "poverty"],
-            "hourly_wage": [20.0, 15.0]
+            "hourly_wage": [20.0, 15.0],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)]
         })
 
         mock_conn = MagicMock()
@@ -77,6 +79,7 @@ class TestCopyToTemp:
 
     def test_copy_to_temp_column_subset(self):
         """Test that only specified columns are copied."""
+        from datetime import date
         df = pd.DataFrame({
             "run_id": [1],
             "county_fips": ["001"],
@@ -85,6 +88,7 @@ class TestCopyToTemp:
             "children": [0],
             "wage_type": ["living"],
             "hourly_wage": [20.0],
+            "page_updated_at": [date(2024, 1, 15)],
             "extra_col": ["should_not_be_copied"]
         })
 
@@ -113,6 +117,7 @@ class TestCopyToTemp:
 
     def test_copy_to_temp_expenses(self):
         """Test copy_to_temp with expenses columns."""
+        from datetime import date
         df = pd.DataFrame({
             "run_id": [1],
             "county_fips": ["001"],
@@ -120,7 +125,8 @@ class TestCopyToTemp:
             "working_adults": [1],
             "children": [0],
             "expense_category": ["food"],
-            "annual_amount": [5000.0]
+            "annual_amount": [5000.0],
+            "page_updated_at": [date(2024, 1, 15)]
         })
 
         mock_conn = MagicMock()
@@ -148,25 +154,27 @@ class TestColumnDefinitions:
     def test_wages_columns(self):
         """Test WAGES_COLUMNS constant."""
         expected = ["run_id", "county_fips", "adults", "working_adults", 
-                   "children", "wage_type", "hourly_wage"]
+                   "children", "wage_type", "hourly_wage", "page_updated_at"]
         assert WAGES_COLUMNS == expected
 
     def test_wages_column_defs(self):
         """Test WAGES_COLUMN_DEFS constant."""
         assert "run_id INTEGER" in WAGES_COLUMN_DEFS
-        assert "county_fips VARCHAR(3)" in WAGES_COLUMN_DEFS
+        assert "county_fips CHAR(5)" in WAGES_COLUMN_DEFS
         assert "hourly_wage NUMERIC(10,2)" in WAGES_COLUMN_DEFS
+        assert "page_updated_at DATE" in WAGES_COLUMN_DEFS
 
     def test_expenses_columns(self):
         """Test EXPENSES_COLUMNS constant."""
         expected = ["run_id", "county_fips", "adults", "working_adults",
-                   "children", "expense_category", "annual_amount"]
+                   "children", "expense_category", "annual_amount", "page_updated_at"]
         assert EXPENSES_COLUMNS == expected
 
     def test_expenses_column_defs(self):
         """Test EXPENSES_COLUMN_DEFS constant."""
         assert "run_id INTEGER" in EXPENSES_COLUMN_DEFS
-        assert "county_fips VARCHAR(3)" in EXPENSES_COLUMN_DEFS
+        assert "county_fips CHAR(5)" in EXPENSES_COLUMN_DEFS
         assert "expense_category VARCHAR(50)" in EXPENSES_COLUMN_DEFS
         assert "annual_amount NUMERIC(10,2)" in EXPENSES_COLUMN_DEFS
+        assert "page_updated_at DATE" in EXPENSES_COLUMN_DEFS
 

@@ -52,10 +52,12 @@ class TestScrapeCounty:
     @patch('src.extract.extract_ops.WageExtractor')
     def test_success(self, mock_wage_extractor_class):
         """Test successful county scrape."""
+        from datetime import datetime
         mock_extractor = Mock(spec=WageExtractor)
         mock_extractor.get_county_data.return_value = {
             "wages_data": [{"category": "Housing"}],
             "expenses_data": [{"category": "Food"}],
+            "page_updated_at": datetime(2024, 1, 15),
         }
         mock_wage_extractor_class.return_value.__enter__.return_value = mock_extractor
 
@@ -82,10 +84,12 @@ class TestScrapeCountyWithExtractor:
 
     def test_success(self):
         """Test successful scrape with existing extractor."""
+        from datetime import datetime
         mock_extractor = Mock(spec=WageExtractor)
         mock_extractor.get_county_data.return_value = {
             "wages_data": [],
             "expenses_data": [],
+            "page_updated_at": datetime(2024, 1, 15),
         }
 
         result = scrape_county_with_extractor(mock_extractor, "01", "001")
@@ -100,10 +104,12 @@ class TestScrapeStateCounties:
     @patch('src.extract.extract_ops.WageExtractor')
     def test_scrape_multiple_counties(self, mock_wage_extractor_class):
         """Test scraping multiple counties."""
+        from datetime import datetime
         mock_extractor = Mock(spec=WageExtractor)
         mock_extractor.get_county_data.return_value = {
             "wages_data": [],
             "expenses_data": [],
+            "page_updated_at": datetime(2024, 1, 15),
         }
         mock_wage_extractor_class.return_value.__enter__.return_value = mock_extractor
 
