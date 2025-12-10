@@ -13,6 +13,7 @@ from src.extract.extract_ops import (
     get_states,
     get_all_counties,
     get_county_codes,
+    get_county_codes_for_state,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "get_states",
     "get_all_counties",
     "get_county_codes",
+    "get_county_codes_for_state",
 ]
