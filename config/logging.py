@@ -52,7 +52,7 @@ def setup_logging() -> logging.Logger:
     
     # Get and return the logger
     logger = logging.getLogger(settings.app_name)
-    logger.info(f"Logging initialized - Environment: {settings.environment}, Level: {settings.log_level}")
+    logger.info(f"Logging initialized - Level: {settings.log_level}")
     
     return logger
 

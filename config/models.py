@@ -4,6 +4,9 @@ Configuration models for the application.
 
 from pydantic import BaseModel, field_validator, Field
 from typing import Optional
+from pathlib import Path
+import yaml
+import json
 
 
 class HttpClientConfig(BaseModel):
@@ -58,7 +61,8 @@ class PipelineConfig(BaseModel):
     Pipeline configuration for the ETL process.
     '''
     min_success_rate: float = 0.8
-    target_states: list[str] = Field(default=["*"])  # Default normalized to list
+    target_states: list[str] = Field(
+        default=["*"])  # Default normalized to list
 
     @field_validator("min_success_rate")
     @classmethod
@@ -89,11 +93,28 @@ class PipelineConfig(BaseModel):
         raise ValueError("target_states must be a string or list of strings")
 
 
+class AppConfig(BaseModel):
+    """Application configuration from YAML."""
+    api: ApiConfig
+    scraping: ScrapingConfig
+    pipeline: PipelineConfig
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "AppConfig":
+        with open(path, encoding="utf-8") as f:
+            return cls(**yaml.safe_load(f))
+
+
 class StateConfig(BaseModel):
     '''
     State configuration with FIPS mappingg from a JSON file.
     '''
     fips_map: dict[str, str]
+
+    @classmethod
+    def from_json(cls, path: Path) -> "StateConfig":
+        with open(path, encoding="utf-8") as f:
+            return cls(fips_map=json.load(f))
 
     @field_validator('fips_map')
     def fips_map_not_empty(cls, v: dict[str, str]) -> dict[str, str]:
