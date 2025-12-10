@@ -165,8 +165,10 @@ class TestDataframeToModels:
 
     def test_valid_wage_records(self):
         """Test conversion of valid wage records."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["001", "002"],
+            "county_fips": ["01001", "01002"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 2],
             "working_adults": [1, 2],
             "children": [0, 1],
@@ -176,13 +178,15 @@ class TestDataframeToModels:
         models, errors = dataframe_to_models(df, WageRecord)
         assert len(models) == 2
         assert len(errors) == 0
-        assert models[0].county_fips == "001"
+        assert models[0].county_fips == "01001"
         assert models[0].wage_type == "living"
 
     def test_valid_expense_records(self):
         """Test conversion of valid expense records."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["001", "002"],
+            "county_fips": ["01001", "01002"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 2],
             "working_adults": [1, 2],
             "children": [0, 1],
@@ -195,8 +199,10 @@ class TestDataframeToModels:
 
     def test_validation_errors_captured(self):
         """Test that validation errors are captured."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["001", "invalid"],
+            "county_fips": ["01001", "invalid"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 3],  # Invalid: adults must be 1 or 2
             "working_adults": [1, 1],
             "children": [0, 0],
@@ -214,42 +220,48 @@ class TestNormalizeWages:
 
     def test_empty_dataframe(self):
         """Test that empty DataFrame returns empty DataFrame."""
+        from datetime import date
         df = pd.DataFrame()
-        result = normalize_wages(df, "001")
+        result = normalize_wages(df, "01", "001", date(2024, 1, 15))
         assert result.empty
 
     def test_basic_normalization(self):
         """Test basic wage normalization."""
+        from datetime import date
         df = pd.DataFrame({
             "Category": ["living wage", "poverty wage"],
             "1 adult": ["$20.00", "$15.00"],
             "2 adults": ["$25.00", "$18.00"]
         })
-        result = normalize_wages(df, "001", validate=False)
+        result = normalize_wages(df, "01", "001", date(2024, 1, 15), validate=False)
         assert "county_fips" in result.columns
         assert "wage_type" in result.columns
         assert "hourly_wage" in result.columns
         assert "adults" in result.columns
         assert "working_adults" in result.columns
         assert "children" in result.columns
+        assert "page_updated_at" in result.columns
         assert len(result) == 4  # 2 categories * 2 family configs
+        assert result["county_fips"].iloc[0] == "01001"
 
     def test_county_fips_zero_padding(self):
-        """Test that county_fips is zero-padded."""
+        """Test that county_fips is zero-padded to full FIPS."""
+        from datetime import date
         df = pd.DataFrame({
             "Category": ["living wage"],
             "1 adult": ["$20.00"]
         })
-        result = normalize_wages(df, "1", validate=False)
-        assert result["county_fips"].iloc[0] == "001"
+        result = normalize_wages(df, "01", "1", date(2024, 1, 15), validate=False)
+        assert result["county_fips"].iloc[0] == "01001"
 
     def test_validation_enabled(self):
         """Test that validation works when enabled."""
+        from datetime import date
         df = pd.DataFrame({
             "Category": ["living wage"],
             "1 adult": ["$20.00"]
         })
-        result = normalize_wages(df, "001", validate=True)
+        result = normalize_wages(df, "01", "001", date(2024, 1, 15), validate=True)
         assert len(result) == 1
         assert result["wage_type"].iloc[0] == "living"
 
@@ -259,40 +271,46 @@ class TestNormalizeExpenses:
 
     def test_empty_dataframe(self):
         """Test that empty DataFrame returns empty DataFrame."""
+        from datetime import date
         df = pd.DataFrame()
-        result = normalize_expenses(df, "001")
+        result = normalize_expenses(df, "01", "001", date(2024, 1, 15))
         assert result.empty
 
     def test_basic_normalization(self):
         """Test basic expense normalization."""
+        from datetime import date
         df = pd.DataFrame({
             "Category": ["food", "housing"],
             "1 adult": ["$5,000", "$12,000"],
             "2 adults": ["$8,000", "$18,000"]
         })
-        result = normalize_expenses(df, "001", validate=False)
+        result = normalize_expenses(df, "01", "001", date(2024, 1, 15), validate=False)
         assert "county_fips" in result.columns
         assert "expense_category" in result.columns
         assert "annual_amount" in result.columns
         assert "adults" in result.columns
+        assert "page_updated_at" in result.columns
         assert len(result) == 4  # 2 categories * 2 family configs
+        assert result["county_fips"].iloc[0] == "01001"
 
     def test_county_fips_zero_padding(self):
-        """Test that county_fips is zero-padded."""
+        """Test that county_fips is zero-padded to full FIPS."""
+        from datetime import date
         df = pd.DataFrame({
             "Category": ["food"],
             "1 adult": ["$5,000"]
         })
-        result = normalize_expenses(df, "1", validate=False)
-        assert result["county_fips"].iloc[0] == "001"
+        result = normalize_expenses(df, "01", "1", date(2024, 1, 15), validate=False)
+        assert result["county_fips"].iloc[0] == "01001"
 
     def test_validation_enabled(self):
         """Test that validation works when enabled."""
+        from datetime import date
         df = pd.DataFrame({
             "Category": ["food"],
             "1 adult": ["$5,000"]
         })
-        result = normalize_expenses(df, "001", validate=True)
+        result = normalize_expenses(df, "01", "001", date(2024, 1, 15), validate=True)
         assert len(result) == 1
         assert result["expense_category"].iloc[0] == "food"
 

@@ -2,7 +2,8 @@
 Wage Calculator extractor.
 """
 from bs4 import BeautifulSoup
-
+import re
+from datetime import datetime
 from config import get_settings
 from config.logging import get_logger
 from src.extract.cache import ResponseCache
@@ -18,6 +19,11 @@ class WageExtractor:
     Uses HttpClient for HTTP operations with caching and retry logic.
     """
 
+    DATE_PATTERN = re.compile(
+        r"(January|February|March|April|May|June|July|August|September|October|November|December)"
+        r"\s+\d{1,2},\s+\d{4}"
+    )
+
     def __init__(self, use_cache: bool = True):
         settings = get_settings()
         scraping_config = settings.scraping
@@ -26,7 +32,8 @@ class WageExtractor:
         if use_cache:
             cache_dir = settings.cache_dir / "wage"
             cache_dir.mkdir(parents=True, exist_ok=True)
-            cache = ResponseCache(cache_dir=cache_dir, ttl_days=scraping_config.cache_ttl_days)
+            cache = ResponseCache(cache_dir=cache_dir,
+                                  ttl_days=scraping_config.cache_ttl_days)
             cache.clear_expired()
 
         self._client = HttpClient(
@@ -37,6 +44,33 @@ class WageExtractor:
             proxies=scraping_config.proxies,
             cache=cache,
         )
+
+    def _extract_page_updated_at(self, soup: BeautifulSoup) -> datetime | None:
+        """Extract 'last updated' date from page."""
+        for p in soup.find_all("p"):
+            text = p.get_text(" ", strip=True)
+            if "last updated" in text.lower():
+                match = self.DATE_PATTERN.search(text)
+                if match:
+                    return datetime.strptime(match.group(0), "%B %d, %Y")
+        
+        logger.warning("Could not find 'last updated' date on page")
+        return None
+
+    def _parse_page(self, content: bytes, county_fips: str) -> dict:
+        """Parse HTML page and extract wage/expense tables."""
+        soup = BeautifulSoup(content, "html.parser")
+        tables = soup.find_all("table", class_="results_table")
+
+        if len(tables) < 2:
+            raise ValueError(
+                f"Expected at least 2 tables, found {len(tables)}")
+
+        return {
+            "wages_data": self._extract_table(tables[0], county_fips),
+            "expenses_data": self._extract_table(tables[1], county_fips),
+            "page_updated_at": self._extract_page_updated_at(soup),
+        }
 
     def get_county_data(self, state_fips: str, county_fips: str) -> dict:
         """
@@ -56,20 +90,6 @@ class WageExtractor:
 
         content = self._client.get(endpoint=endpoint)
         return self._parse_page(content, county_fips)
-
-    def _parse_page(self, content: bytes, county_fips: str) -> dict:
-        """Parse HTML page and extract wage/expense tables."""
-        soup = BeautifulSoup(content, "html.parser")
-        tables = soup.find_all("table", class_="results_table")
-
-        if len(tables) < 2:
-            raise ValueError(
-                f"Expected at least 2 tables, found {len(tables)}")
-
-        return {
-            "wages_data": self._extract_table(tables[0], county_fips),
-            "expenses_data": self._extract_table(tables[1], county_fips),
-        }
 
     def _extract_table(self, table: BeautifulSoup, county_fips: str) -> list[dict]:
         """Extract table into list of row dicts."""

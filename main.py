@@ -83,8 +83,13 @@ def main():
                         continue
 
                     # Transform
-                    all_wages.append(normalize_wages(wages_df, county_fips))
-                    all_expenses.append(normalize_expenses(expenses_df, county_fips))
+                    page_updated_at = result.page_updated_at.date() if result.page_updated_at else None
+                    if page_updated_at is None:
+                        logger.warning(format_log_with_metadata("No page_updated_at date available, using current date", current_year, state_fips, county_fips))
+                        page_updated_at = datetime.now().date()
+                    
+                    all_wages.append(normalize_wages(wages_df, state_fips, county_fips, page_updated_at))
+                    all_expenses.append(normalize_expenses(expenses_df, state_fips, county_fips, page_updated_at))
 
                     logger.info(format_log_with_metadata(f"OK", current_year, state_fips, county_fips))
 

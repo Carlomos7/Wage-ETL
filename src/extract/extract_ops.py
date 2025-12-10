@@ -3,7 +3,7 @@ Extraction operations and result types.
 """
 from dataclasses import dataclass
 from typing import Optional, Generator
-
+from datetime import datetime
 from src.extract.census_api import CensusExtractor
 from src.extract.wage_scraper import WageExtractor
 
@@ -15,6 +15,7 @@ class ScrapeResult:
     success: bool
     wages_data: Optional[list[dict]] = None
     expenses_data: Optional[list[dict]] = None
+    page_updated_at: Optional[datetime] = None
     error: Optional[str] = None
 
 # --- Wage scraping ---
@@ -41,6 +42,7 @@ def scrape_county_with_extractor(
             success=True,
             wages_data=data["wages_data"],
             expenses_data=data["expenses_data"],
+            page_updated_at=data["page_updated_at"],
         )
     except Exception as e:
         return ScrapeResult(

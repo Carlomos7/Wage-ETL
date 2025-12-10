@@ -77,15 +77,17 @@ class TestValidateWages:
 
     def test_valid_wages(self):
         """Test validation of valid wages DataFrame."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["001", "001"],
+            "county_fips": ["01001", "01001"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 2],
             "working_adults": [1, 2],
             "children": [0, 1],
             "wage_type": ["living", "poverty"],
             "hourly_wage": [20.0, 15.0]
         })
-        is_valid, errors = validate_wages(df, "001")
+        is_valid, errors = validate_wages(df, "01001")
         assert is_valid is True
         assert len(errors) == 0
 
@@ -98,21 +100,21 @@ class TestValidateWages:
             "wage_type": ["living"],
             "hourly_wage": [20.0]
         })
-        is_valid, errors = validate_wages(df, "001")
+        is_valid, errors = validate_wages(df, "01001")
         assert is_valid is False
         assert any("county_fips" in str(error).lower() for error in errors)
 
     def test_inconsistent_county_fips(self):
         """Test that inconsistent county_fips values fail validation."""
         df = pd.DataFrame({
-            "county_fips": ["001", "002"],  # Different from input
+            "county_fips": ["01001", "01002"],  # Different from input
             "adults": [1, 1],
             "working_adults": [1, 1],
             "children": [0, 0],
             "wage_type": ["living", "living"],
             "hourly_wage": [20.0, 20.0]
         })
-        is_valid, errors = validate_wages(df, "001")
+        is_valid, errors = validate_wages(df, "01001")
         assert is_valid is False
         # Check for inconsistent error in any error dict
         error_str = str(errors).lower()
@@ -125,28 +127,30 @@ class TestValidateWages:
     def test_invalid_model_data(self):
         """Test that invalid model data fails validation."""
         df = pd.DataFrame({
-            "county_fips": ["001", "001"],
+            "county_fips": ["01001", "01001"],
             "adults": [1, 3],  # Invalid: adults must be 1 or 2
             "working_adults": [1, 1],
             "children": [0, 0],
             "wage_type": ["living", "living"],
             "hourly_wage": [20.0, 20.0]
         })
-        is_valid, errors = validate_wages(df, "001")
+        is_valid, errors = validate_wages(df, "01001")
         assert is_valid is False
         assert len(errors) > 0
 
     def test_county_fips_zero_padding(self):
         """Test that county_fips is zero-padded during validation."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["1", "1"],
+            "county_fips": ["01001", "01001"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 1],
             "working_adults": [1, 1],
             "children": [0, 0],
             "wage_type": ["living", "living"],
             "hourly_wage": [20.0, 20.0]
         })
-        is_valid, errors = validate_wages(df, "1")
+        is_valid, errors = validate_wages(df, "01001")
         assert is_valid is True
 
 
@@ -155,15 +159,17 @@ class TestValidateExpenses:
 
     def test_valid_expenses(self):
         """Test validation of valid expenses DataFrame."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["001", "001"],
+            "county_fips": ["01001", "01001"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 2],
             "working_adults": [1, 2],
             "children": [0, 1],
             "expense_category": ["food", "housing"],
             "annual_amount": [5000.0, 12000.0]
         })
-        is_valid, errors = validate_expenses(df, "001")
+        is_valid, errors = validate_expenses(df, "01001")
         assert is_valid is True
         assert len(errors) == 0
 
@@ -176,21 +182,21 @@ class TestValidateExpenses:
             "expense_category": ["food"],
             "annual_amount": [5000.0]
         })
-        is_valid, errors = validate_expenses(df, "001")
+        is_valid, errors = validate_expenses(df, "01001")
         assert is_valid is False
         assert any("county_fips" in str(error).lower() for error in errors)
 
     def test_inconsistent_county_fips(self):
         """Test that inconsistent county_fips values fail validation."""
         df = pd.DataFrame({
-            "county_fips": ["001", "002"],  # Different from input
+            "county_fips": ["01001", "01002"],  # Different from input
             "adults": [1, 1],
             "working_adults": [1, 1],
             "children": [0, 0],
             "expense_category": ["food", "food"],
             "annual_amount": [5000.0, 5000.0]
         })
-        is_valid, errors = validate_expenses(df, "001")
+        is_valid, errors = validate_expenses(df, "01001")
         assert is_valid is False
         # Check for inconsistent error in any error dict
         error_str = str(errors).lower()
@@ -203,27 +209,29 @@ class TestValidateExpenses:
     def test_invalid_model_data(self):
         """Test that invalid model data fails validation."""
         df = pd.DataFrame({
-            "county_fips": ["001", "001"],
+            "county_fips": ["01001", "01001"],
             "adults": [1, 3],  # Invalid: adults must be 1 or 2
             "working_adults": [1, 1],
             "children": [0, 0],
             "expense_category": ["food", "food"],
             "annual_amount": [5000.0, 5000.0]
         })
-        is_valid, errors = validate_expenses(df, "001")
+        is_valid, errors = validate_expenses(df, "01001")
         assert is_valid is False
         assert len(errors) > 0
 
     def test_county_fips_zero_padding(self):
         """Test that county_fips is zero-padded during validation."""
+        from datetime import date
         df = pd.DataFrame({
-            "county_fips": ["1", "1"],
+            "county_fips": ["01001", "01001"],
+            "page_updated_at": [date(2024, 1, 15), date(2024, 1, 15)],
             "adults": [1, 1],
             "working_adults": [1, 1],
             "children": [0, 0],
             "expense_category": ["food", "food"],
             "annual_amount": [5000.0, 5000.0]
         })
-        is_valid, errors = validate_expenses(df, "1")
+        is_valid, errors = validate_expenses(df, "01001")
         assert is_valid is True
 
