@@ -13,7 +13,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
-    # TEMPORARY ENVIRONMENT VARIABLES
     env:
       ENVIRONMENT: testing
       DB_HOST: localhost
@@ -21,22 +20,33 @@ jobs:
       DB_NAME: test_db
       DB_USER: test_user
       DB_PASSWORD: test_password
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version-file: ".python-version"
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
-    
+
     - name: Install dependencies
       run: uv sync
-    
+
     - name: Run tests with coverage
-      run: uv run pytest
+      run: |
+        uv run coverage erase
+        uv run coverage run -m pytest
+        uv run coverage report
+        uv run coverage html
+
+    - name: Upload HTML coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-html
+        path: htmlcov/
