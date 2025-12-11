@@ -102,14 +102,18 @@ graph TD
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
+If you want your prerequisites section to point to the **official uv installation docs**, here’s the clean, properly formatted version:
+
+---
+
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
+Before you begin, ensure the following tools are installed:
 
 - **Python 3.13+**
-- **uv** *Optional*- [Modern Python package manager](https://github.com/Carlomos7/Wage-ETL)
-- **Docker** - For local environment setup
-- **Git** - For cloning the repository
+- [**uv**](https://docs.astral.sh/uv/getting-started/installation/) (optional) — Modern Python package manager
+- **Docker** — For local database and infrastructure setup
+- **Git** — For cloning the repository
 
 ### Installing
 
@@ -120,13 +124,24 @@ Before you begin, ensure you have the following installed:
    cd Wage-ETL
    ```
 
-2. **Install dependencies using uv**
+2. **Install dependencies**
+
+   Using **uv** (recommended):
 
    ```bash
    uv sync
    ```
 
-   or pip
+   Or using **pip**:
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate   # On macOS/Linux
+   # .venv\Scripts\activate    # On Windows (PowerShell)
+   pip install .
+   ```
+
+   *(pip will read `pyproject.toml` and install the project along with its dependencies.)*
 
 3. **Set up environment variables**
    Create a `.env` file in the project root:
@@ -138,7 +153,7 @@ Before you begin, ensure you have the following installed:
    DB_NAME=wage_etl
    DB_USER=postgres
    DB_PASSWORD=your_password_here
-   
+
    # Optional: Logging Configuration
    LOG_LEVEL=INFO
    LOG_TO_FILE=true
@@ -151,15 +166,18 @@ Before you begin, ensure you have the following installed:
    ```
 
    This will start:
-   - PostgreSQL 16 database
-   - Flyway migrations (automatically runs SQL migrations)
-   - PgAdmin (optional, accessible at <http://localhost:5050>)
+
+   - PostgreSQL 16
+   - Flyway migrations
+   - PgAdmin (optional, [http://localhost:5050](http://localhost:5050))
 
 5. **Run the ETL pipeline**
 
    ```bash
    uv run -m main
    ```
+
+   *(Or `python -m main` if installed with pip.)*
 
 **Example: Querying the data**
 
@@ -206,11 +224,6 @@ The pipeline is configured through YAML files and environment variables. By defa
 - **Pipeline Configuration**:
   - Target states: `["NJ"]` (default - modify to process other states)
   - Minimum success rate: 0.8 (80%)
-
-**Environment Variables** (`.env` file):
-
-- Database connection parameters (required)
-- Logging configuration (optional, defaults to INFO level)
 
 **State FIPS Mapping** (`config/state_fips.json`):
 
@@ -344,6 +357,10 @@ SELECT * FROM stg_wages_rejects;
 SELECT * FROM stg_expenses_rejects;
 ```
 
+## Documentation
+
+- [Documentation Tasks](https://github.com/users/Carlomos7/projects/9) - Kanban Board of Issues
+
 ## Configuration
 
 ### YAML Configuration ([`config/config.yaml`](config/config.yaml))
@@ -374,23 +391,6 @@ SELECT * FROM stg_expenses_rejects;
 - `pipeline.min_success_rate`: Minimum success rate threshold (default: `0.8`)
 - `pipeline.target_states`: List of state abbreviations to process (default: `["NJ"]`)
 
-### Environment Variables (`.env`)
-
-**Required:**
-
-- `DB_HOST`: PostgreSQL host (default: `localhost`)
-- `DB_PORT`: PostgreSQL port (default: `5432`)
-- `DB_NAME`: Database name (default: `wage_etl`)
-- `DB_USER`: Database user (default: `postgres`)
-- `DB_PASSWORD`: Database password (required)
-
-**Optional:**
-
-- `LOG_LEVEL`: Logging level - DEBUG, INFO, WARNING, ERROR, CRITICAL (default: `INFO`)
-- `LOG_TO_FILE`: Enable file logging (default: `true`)
-- `PGADMIN_EMAIL`: PgAdmin login email (default: `admin@example.com`)
-- `PGADMIN_PASSWORD`: PgAdmin login password (default: `admin`)
-
 ### State FIPS Mapping ([`config/state_fips.json`](config/state_fips.json))
 
 Maps US state abbreviations to FIPS codes. Used for:
@@ -399,17 +399,13 @@ Maps US state abbreviations to FIPS codes. Used for:
 - Validating state inputs
 - Generating state-specific queries
 
-## Links
+## Data Sources
 
-**Data Sources:**
+> Living wage data sourced from the MIT Living Wage Calculator https://livingwage.mit.edu.
+This project is for educational purposes only and is not intended for large-scale scraping or redistribution of MIT Living Wage data.
 
-- [MIT Living Wage Calculator](https://livingwage.mit.edu/) - Living wage data sourced from the Living Wage Institute via https://livingwage.mit.edu
-- [US Census Bureau API](https://www.census.gov/data/developers/data-sets.html) - Source of county and state metadata
-- [Census API Documentation](https://www.census.gov/data/developers/guidance/api-user-guide.html) - API usage guide
-
-**Project Resources:**
-
-- [Documentation Tasks](https://github.com/users/Carlomos7/projects/9) - Kanban Board of Issues
+- [**MIT Living Wage Calculator**](https://livingwage.mit.edu/) — Wage and expense tables per county.
+- [**US Census Bureau API**]((https://www.census.gov/data/developers/data-sets.html)) — County FIPS codes & demographic metadata.
 
 ## Licensing
 
@@ -421,5 +417,16 @@ See the [LICENSE](LICENSE) file for the full text of the license.
 
 ## References
 
-- [DOs and DON'Ts of Web Scraping in 2025](https://medium.com/@datajournal/dos-and-donts-of-web-scraping-e4f9b2a49431)
-- [Pydantic Setting Management Documentation](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
+- TechWithQasim. *Building an ETL Pipeline for Web Scraping Using Python.*
+  [https://dev.to/techwithqasim/building-an-etl-pipeline-for-web-scraping-using-python-2381](https://dev.to/techwithqasim/building-an-etl-pipeline-for-web-scraping-using-python-2381)
+- CodeWithHannan. *Python for ETL Pipelines: Building Modular, Testable, and Reliable Data Workflows.*
+  [https://medium.com/@CodeWithHannan/python-for-etl-pipelines-building-modular-testable-and-reliable-data-workflows-0f1768428244](https://medium.com/@CodeWithHannan/python-for-etl-pipelines-building-modular-testable-and-reliable-data-workflows-0f1768428244)
+- DataJournal. *DOs and DON'Ts of Web Scraping in 2025.*
+  [https://medium.com/@datajournal/dos-and-donts-of-web-scraping-e4f9b2a49431](https://medium.com/@datajournal/dos-and-donts-of-web-scraping-e4f9b2a49431)
+- Census Bureau. *Census API User Guide.*
+  [https://www.census.gov/data/developers/guidance/api-user-guide.html](https://www.census.gov/data/developers/guidance/api-user-guide.html)
+- Pydantic Team. *Pydantic Settings Management Documentation.*
+  [https://docs.pydantic.dev/latest/concepts/pydantic_settings/](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
+- ArjanCodes / Testing Tutorial. *How to Mock psycopg2 with pytest for Efficient Database Testing.*
+  [https://www.youtube.com/watch?v=Z2jjKsSp6M0](https://www.youtube.com/watch?v=Z2jjKsSp6M0)
+
