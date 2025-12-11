@@ -24,6 +24,30 @@
 
 A Python-based ETL system that extracts living wage and expense data from MIT's Living Wage Calculator and US Census Bureau API, transforms it from wide-format HTML tables to normalized long-format records, validates it using Pydantic models, and loads it into PostgreSQL staging tables with comprehensive error handling.
 
+## Architecture Overview
+
+```mermaid
+graph TD
+    A["<b>DATA SOURCES</b><br/>━━━━━━━━━━━━━━━━<br/>• MIT Living Wage Calculator (HTML)<br/>• US Census Bureau API (JSON)"]
+    B["<b>EXTRACT LAYER</b><br/>━━━━━━━━━━━━━━━━<br/>• HttpClient (unified HTTP operations)<br/>• ResponseCache (file-based, TTL)<br/>• WageExtractor (BeautifulSoup)<br/>• CensusExtractor (API client)"]
+    C["<b>TRANSFORM LAYER</b><br/>━━━━━━━━━━━━━━━━<br/>• Wide → Long format conversion<br/>• Currency cleaning (DataFrame-level)<br/>• Pydantic validation models<br/>• Family config parsing"]
+    D["<b>LOAD LAYER</b><br/>━━━━━━━━━━━━━━━━<br/>• Bulk upsert operations<br/>• Staging tables (stg_*)<br/>• Reject tables (data quality)<br/>• PostgreSQL with psycopg2"]
+    
+    A -->|Data Flow| B
+    B -->|Extracted Data| C
+    C -->|Transformed Data| D
+    
+    classDef sourceStyle fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
+    classDef extractStyle fill:#7B68EE,stroke:#5A4BB5,stroke-width:3px,color:#fff
+    classDef transformStyle fill:#50C878,stroke:#3A9B5C,stroke-width:3px,color:#fff
+    classDef loadStyle fill:#FF6B6B,stroke:#CC5555,stroke-width:3px,color:#fff
+    
+    class A sourceStyle
+    class B extractStyle
+    class C transformStyle
+    class D loadStyle
+```
+
 ## Key Features
 
 - Web scraping with BeautifulSoup4 and Census API integration
