@@ -1,445 +1,401 @@
-# Wage ETL Pipeline ~ Drafted
+# Wage ETL Pipeline
 
-TODO: UPDATE THIS BEFORE DUE DATE
+>Automated ETL System for Economic Analysis
 
-A production-ready ETL pipeline that extracts living wage data from MIT's Living Wage Calculator and county reference data from the US Census Bureau API, validates and cleans the data, then loads it into PostgreSQL for analysis.
+<h1 align="center">
+  <br>
+  <div>
+    <a href="https://github.com/Carlomos7/Wage-ETL/issues">
+        <img src="https://img.shields.io/github/issues-raw/Carlomos7/Wage-ETL?labelColor=303446&style=for-the-badge">
+    </a>
+    <a href="https://github.com/Carlomos7/Wage-ETL/issues?q=is%3Aissue+is%3Aclosed">
+        <img src="https://img.shields.io/github/issues-closed-raw/Carlomos7/Wage-ETL?labelColor=303446&style=for-the-badge">
+    </a>
+    <a href="https://github.com/Carlomos7/Wage-ETL">
+        <img src="https://img.shields.io/github/repo-size/Carlomos7/Wage-ETL?labelColor=303446&style=for-the-badge">
+    </a>
+    <a href="https://github.com/Carlomos7/Wage-ETL">
+        <img src="https://img.shields.io/github/milestones/all/Carlomos7/Wage-ETL?labelColor=303446&style=for-the-badge"/>
+    </a>
+    <br>
+  </div>
+</h1>
+<br>
 
-## Overview
+A Python-based ETL system that extracts living wage and expense data from MIT's Living Wage Calculator and US Census Bureau API, transforms it from wide-format HTML tables to normalized long-format records, validates it using Pydantic models, and loads it into PostgreSQL staging tables with comprehensive error handling.
 
-This project automates the collection and processing of living wage data for US counties. It scrapes hourly wage rates (living, poverty, minimum) and annual expense breakdowns for different family configurations, validates the data using Pydantic schemas, and stores it in a structured format for analysis.
+## Key Features
 
-**Key Features:**
+- Web scraping with BeautifulSoup4 and Census API integration
+- HTTP response caching with TTL-based expiration
+- DataFrame-level data cleaning and currency normalization
+- Strict schema validation with Pydantic v2
+- Bulk PostgreSQL operations using COPY for performance
+- Reject table handling for data quality tracking
+- Idempotent pipeline design for safe re-runs
+- Full test coverage with pytest
 
-- 🔄 **Idempotent ETL**: Safe to re-run without creating duplicates
-- ✅ **Data Validation**: Pydantic-based validation with business rule checks
-- 📊 **Structured Storage**: CSV staging files organized by year and state
-- 🔍 **Error Handling**: Comprehensive logging and error tracking
-- ⚡ **Caching**: HTTP response caching to reduce API calls
-- 🐳 **Docker Support**: PostgreSQL database with Docker Compose
-- 🧪 **Test Coverage**: Comprehensive test suite with pytest
+## Technologies Used
 
-## System Architecture
+**Core Language & Runtime:**
 
-```mermaid
-graph TB
-    subgraph External["Data Sources"]
-        Census[Census API]
-        MIT[MIT Website]
-    end
-    
-    subgraph Extract["Extract ✓"]
-        API[API Extractor<br/>+ Cache]
-        Scraper[Web Scraper<br/>+ Cache + Retry]
-    end
-    
-    subgraph Transform["Transform"]
-        Clean[Clean]
-        Validate[Validate ✓]
-        Dedupe[Dedupe]
-    end
-    
-    subgraph Load["Load"]
-        CSV[CSV Files ✓]
-        DB[(PostgreSQL →)]
-    end
-    
-    Census --> API
-    MIT --> Scraper
-    API --> Clean
-    Scraper --> Clean
-    Clean --> Validate
-    Validate --> Dedupe
-    Dedupe --> CSV
-    Dedupe -.-> DB
-    
-    style External fill:#e3f2fd
-    style Extract fill:#c8e6c9
-    style Transform fill:#fff3cd
-    style Load fill:#e8f5e9
-```
+- Python 3.13 (with comprehensive type hints)
+- uv (modern, fast dependency resolver and package manager)
 
-### Core Layers
+**Data Processing:**
 
-| Layer            | Purpose                                    | Key Technology                   |
-| ---------------- | ------------------------------------------ | -------------------------------- |
-| **Extract**      | Fetch data from Census API and MIT website | `requests`, `BeautifulSoup`      |
-| **Transform**    | Clean, validate, and deduplicate data      | `pandas`, `Pydantic`             |
-| **Load**         | Store data in CSV files                    | `pandas`                         |
-| **Config**       | Manage settings and connections            | `pydantic-settings`, `python-dotenv` |
-| **Models**       | Define data schemas                        | `Pydantic`                       |
+- pandas 2.3.3 - Data manipulation and transformation
+- Pydantic 2.12.4 - Data validation and modeling
+- BeautifulSoup4 4.14.2 - HTML parsing for web scraping
 
-## Installation
+**Database & Connectivity:**
+
+- PostgreSQL 16 - Relational database for staging and analytics
+- psycopg2-binary 2.9.11 - PostgreSQL adapter for Python
+
+**HTTP & APIs:**
+
+- requests 2.32.5 - HTTP library for API calls and web scraping
+
+**Configuration & Settings:**
+
+- PyYAML 6.0.3 - YAML configuration file parsing
+- python-dotenv 1.2.1 - Environment variable management
+- pydantic-settings 2.12.0 - Settings management with validation
+
+**Local Development Setup:**
+
+- Docker Compose - Container orchestration
+- Flyway - Database migration management
+- PostgreSQL 16 (containerized)
+
+**Testing & Quality:**
+
+- pytest 9.0.2 - Testing framework
+- coverage.py 7.13.0 - Code coverage analysis
+
+## Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
 
+Before you begin, ensure you have the following installed:
+
 - **Python 3.13+**
-- **uv** (fast Python package manager)
-- **Docker & Docker Compose** (for PostgreSQL database)
+- **uv** *Optional*- [Modern Python package manager](https://github.com/Carlomos7/Wage-ETL)
+- **Docker** - For local environment setup
+- **Git** - For cloning the repository
 
-### Setup
+### Installing
 
-1. **Clone the repository:**
+1. **Clone the repository**
 
    ```bash
-   git clone <repository-url>
-   cd Living-Wage-ETL
+   git clone https://github.com/Carlomos7/Wage-ETL.git
+   cd Wage-ETL
    ```
 
-2. **Install dependencies using uv:**
+2. **Install dependencies using uv**
 
    ```bash
    uv sync
    ```
 
-3. **Set up environment variables:**
+   or pip
+
+3. **Set up environment variables**
+   Create a `.env` file in the project root:
 
    ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials
+   # Database Configuration
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=wage_etl
+   DB_USER=postgres
+   DB_PASSWORD=your_password_here
+   
+   # Optional: Logging Configuration
+   LOG_LEVEL=INFO
+   LOG_TO_FILE=true
    ```
 
-4. **Start PostgreSQL database (optional):**
+4. **Start the database infrastructure**
 
    ```bash
-   docker-compose -f docker-compose.dev.yml up -d
+   docker-compose up -d
    ```
 
-## Configuration
+   This will start:
+   - PostgreSQL 16 database
+   - Flyway migrations (automatically runs SQL migrations)
+   - PgAdmin (optional, accessible at <http://localhost:5050>)
 
-### Environment Variables
+5. **Run the ETL pipeline**
 
-Create a `.env` file in the project root with the following variables:
+   ```bash
+   uv run -m main
+   ```
 
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=wage_etl
-DB_USER=postgres
-DB_PASSWORD=your_password
+**Example: Querying the data**
 
-# Optional: Application Settings
-ENVIRONMENT=development
-LOG_LEVEL=INFO
+After running the pipeline, you can query the staging tables:
+
+```sql
+-- Check run status
+SELECT run_id, run_status, counties_processed, wages_loaded, expenses_loaded
+FROM etl_runs
+ORDER BY run_start_timestamp DESC
+LIMIT 5;
+
+-- View sample wage data
+SELECT county_fips, adults, working_adults, children, wage_type, hourly_wage
+FROM stg_wages
+LIMIT 10;
+
+-- Check for rejected records
+SELECT COUNT(*) as reject_count, rejection_reason
+FROM stg_wages_rejects
+GROUP BY rejection_reason;
 ```
 
-### Configuration Files
+### Initial Configuration
 
-- **`config/config.yaml`**: API endpoints, timeouts, retry settings
-- **`config/state_fips.json`**: State FIPS code mappings
-- **`.env`**: Sensitive credentials (not in git)
+The pipeline is configured through YAML files and environment variables. By default, the configuration files are set as follows:
 
-### Configuration Priority
+**[`config/config.yaml`](config/config.yaml)** - Main pipeline configuration:
 
-Settings are loaded in this order (later values override earlier):
+- **API Configuration**:
+  - Census API base URL: `https://api.census.gov/data`
+  - Dataset: `2023/acs/acs5`
+  - Cache TTL: 90 days
+  - Max retries: 3
+  - Timeout: 30 seconds
 
-1. Environment variables
-2. `.env` file
-3. `config/config.yaml`
-4. Default values
+- **Scraping Configuration**:
+  - Base URL: `https://livingwage.mit.edu`
+  - Cache TTL: 30 days
+  - Delay between requests: 1-3 seconds (randomized)
+  - Max retries: 3
+  - Timeout: 30 seconds
+
+- **Pipeline Configuration**:
+  - Target states: `["NJ"]` (default - modify to process other states)
+  - Minimum success rate: 0.8 (80%)
+
+**Environment Variables** (`.env` file):
+
+- Database connection parameters (required)
+- Logging configuration (optional, defaults to INFO level)
+
+**State FIPS Mapping** (`config/state_fips.json`):
+
+- Maps state abbreviations to FIPS codes
+- Used for filtering counties by state
+
+To process different states, edit `config/config.yaml`:
+
+```yaml
+pipeline:
+  target_states:
+    - "NY"
+    - "CA"
+    - "TX"
+```
+
+## Running the tests with coverage
+
+The project includes comprehensive unit and integration tests. Run them using pytest:
+
+**Run all tests:**
+
+```bash
+uv run coverage run -m pytest # or just uv run pytest
+```
+
+**Run coverage report:**
+
+```bash
+uv run coverage report
+```
+
+**Generate HTML Coverage Report:**
+
+```bash
+uv run coverage html
+```
+
+**Generate HTML Coverage Report:**
+
+```bash
+uv run coverage erase
+```
+
+**View coverage report:**
+After running with coverage, open `htmlcov/index.html` in your browser to see the detailed coverage report.
 
 ## Usage
 
-### Running the Pipeline
+### Basic Pipeline Execution
 
-```bash
-# Activate the virtual environment (if using uv)
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+1. **Start the infrastructure** (if not already running):
 
-# Run the main pipeline
-python main.py
-```
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Run the ETL pipeline**:
+
+   ```bash
+   uv run -m main
+   ```
 
 The pipeline will:
 
-1. Fetch county FIPS codes from the Census API
-2. Scrape living wage data from MIT's website for each county
-3. Transform and validate the data
-4. Save to CSV files in `data/raw/{year}/`
+- Extract county FIPS codes from the Census API for configured states
+- Scrape wage and expense data from MIT Living Wage Calculator for each county
+- Transform wide-format data to long format
+- Validate data using Pydantic models
+- Load valid records into staging tables (`stg_wages`, `stg_expenses`)
+- Store invalid records in reject tables (`stg_wages_rejects`, `stg_expenses_rejects`)
+- Track the run in `etl_runs` table with status and statistics
 
-### Output Files
-
-Data is saved to:
-
-- **Wages**: `data/raw/{year}/wage_rates_{state_fips}.csv`
-- **Expenses**: `data/raw/{year}/expense_breakdown_{state_fips}.csv`
-
-### Example Output Structure
-
-```csv
-county_fips,Category,1 Adult - 0 Children,1 Adult - 1 Children,...
-001,Living Wage,$24.25,$44.85,...
-001,Poverty Wage,$7.52,$10.17,...
-001,Minimum Wage,$15.49,$15.49,...
-```
-
-## Project Structure
+### Pipeline Flow
 
 ```mint
-Living-Wage-ETL/
-│
-├── config/                    # Configuration management
-│   ├── config.yaml            # API and pipeline settings
-│   ├── settings.py            # Pydantic settings loader
-│   ├── models.py              # Configuration models
-│   ├── logging.py             # Logging setup
-│   └── state_fips.json        # State FIPS mappings
-│
-├── src/
-│   ├── extract/               # Data extraction layer
-│   │   ├── census_api.py      # Census API client
-│   │   ├── wage_scraper.py    # MIT website scraper
-│   │   ├── http.py            # HTTP client with retry logic
-│   │   ├── cache.py           # Response caching
-│   │   └── extract_ops.py     # Extraction operations
-│   │
-│   └── transform/             # Data transformation layer
-│       ├── pandas_ops.py      # DataFrame operations
-│       └── csv_utils.py        # CSV storage utilities
-│
-├── tests/                     # Test suite
-│   ├── test_census_api.py
-│   ├── test_wage_scraper.py
-│   └── ...
-│
-├── data/                      # Data storage (gitignored)
-│   ├── raw/                   # Raw scraped data
-│   ├── processed/             # Processed data
-│   └── cache/                 # HTTP response cache
-│
-├── main.py                    # Pipeline orchestrator
-├── pyproject.toml             # Project dependencies
-├── docker-compose.dev.yml     # PostgreSQL setup
-└── README.md                  # This file
+1. Extract
+   ├── Census API → County FIPS codes
+   └── Web Scraper → HTML tables per county
+
+2. Transform
+   ├── Parse HTML → Wide-format DataFrames
+   ├── Validate → Pre-transform checks
+   ├── Normalize → Long-format DataFrames
+   └── Validate → Pydantic model conversion
+
+3. Load
+   ├── Accumulate → Combine all counties
+   ├── Bulk COPY → Temporary tables
+   ├── UPSERT → Staging tables (ON CONFLICT)
+   ├── Load Rejects → Invalid records
+   └── Update Run → etl_runs table
 ```
 
-## Data Sources
+### Monitoring Pipeline Execution
 
-### US Census Bureau API
+**View logs:**
 
-**Endpoint:** `https://api.census.gov/data/2023/acs/acs5`
+- Console output: Real-time structured logs
+- File logs: `logs/etl.log` and `logs/error.log`
 
-**What's Fetched:**
+**Check run status in database:**
 
-- County names
-- State FIPS codes
-- County FIPS codes
-- Full FIPS codes (state + county)
-
-**Example Response:**
-
-```json
-[
-  ["NAME", "state", "county"],
-  ["Atlantic County, New Jersey", "34", "001"],
-  ["Bergen County, New Jersey", "34", "003"]
-]
+```sql
+SELECT 
+    run_id,
+    run_status,
+    run_start_timestamp,
+    run_end_timestamp,
+    state_fips,
+    counties_processed,
+    wages_loaded,
+    wages_rejected,
+    expenses_loaded,
+    expenses_rejected
+FROM etl_runs
+ORDER BY run_start_timestamp DESC;
 ```
 
-**Why This Matters:**
+**Query staging data:**
 
-- MIT URLs require FIPS codes: `https://livingwage.mit.edu/counties/34001`
-- Provides standardized county identifiers
-- Enables validation and cross-referencing
+```sql
+-- Sample wage data
+SELECT * FROM stg_wages LIMIT 10;
 
-### MIT Living Wage Calculator
+-- Sample expense data
+SELECT * FROM stg_expenses LIMIT 10;
 
-**Base URL:** `https://livingwage.mit.edu`
-
-**What's Scraped:**
-
-- Two HTML tables per county page
-- **Table 1**: Hourly wage rates (Living Wage, Poverty Wage, Minimum Wage)
-- **Table 2**: Annual expense breakdowns (Food, Childcare, Housing, etc.)
-
-**Family Configurations (12 total per county):**
-
-- 1 adult: 0, 1, 2, 3 children
-- 2 adults (1 working): 0, 1, 2, 3 children
-- 2 adults (both working): 0, 1, 2, 3 children
-
-**Expected Records:**
-
-- 12 wage records per county
-- 12 expense records per county
-- **Total for 21 NJ counties:** 504 records (252 wages + 252 expenses)
-
-## ETL Process
-
-### Phase 1: Extract
-
-#### Census API Extraction
-
-1. Send GET request to Census API for target state counties
-2. Parse JSON response (skip header row)
-3. Extract county name, state code, county code
-4. Build full FIPS code (state + county)
-5. Clean county names (remove state suffix)
-
-#### MIT Website Scraping
-
-1. Load county FIPS codes from Census API
-2. Build MIT URLs: `https://livingwage.mit.edu/counties/{fips_code}`
-3. Send HTTP GET request with rate limiting
-4. Parse HTML with BeautifulSoup
-5. Extract two tables: `table.results_table`
-6. Map 12 columns to family configurations
-7. Add metadata (county name, FIPS, scrape date)
-
-**Rate Limiting:**
-
-- Configurable delay between requests (default: 1-3 seconds)
-- Prevents overwhelming the MIT website
-
-### Phase 2: Transform
-
-#### Clean
-
-- **Currency Fields**: Remove `$` and commas, convert to float
-- **String Fields**: Strip whitespace, standardize capitalization
-- **Integer Fields**: Convert strings to integers
-- **Date Fields**: Standardize to YYYY-MM-DD format
-
-#### Validate
-
-Validation rules enforced:
-
-- ✅ Required fields present (county_name, fips_code, wage fields)
-- ✅ Data types correct (integers, floats, dates)
-- ✅ Value ranges valid (adults: 1-2, children: 0-3, wages > 0)
-- ✅ Business logic (working_adults ≤ adults)
-- ✅ Reference data exists (county in valid list, FIPS exists)
-
-#### Deduplicate
-
-- Track seen combinations using `(county, adults, working_adults, children)`
-- Keep first occurrence, flag subsequent matches
-- Prevents duplicate records in output
-
-### Phase 3: Load
-
-#### CSV Storage
-
-- **Idempotent Upsert**: Replace existing county data, append new counties
-- **Index Cache**: Fast lookup to check if county already exists
-- **Organized by Year**: Files stored in `data/raw/{year}/`
-- **Separate Files**: Wages and expenses in separate CSVs
-
-#### File Naming
-
-- Wages: `wage_rates_{state_fips}.csv`
-- Expenses: `expense_breakdown_{state_fips}.csv`
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
+-- Rejected records
+SELECT * FROM stg_wages_rejects;
+SELECT * FROM stg_expenses_rejects;
 ```
 
-### Code Quality
+## Configuration
 
-```bash
-# Lint code
-pylint src/
-```
+### YAML Configuration ([`config/config.yaml`](config/config.yaml))
 
-### Logging
+**API Configuration:**
 
-Logs are written to:
+- `api.base_url`: Census API base URL (default: `https://api.census.gov/data`)
+- `api.dataset`: Census dataset identifier (default: `2023/acs/acs5`)
+- `api.variables`: List of variables to fetch (default: `["NAME"]`)
+- `api.county`: County filter (default: `["*"]` for all counties)
+- `api.max_retries`: Maximum retry attempts (default: `3`)
+- `api.timeout_seconds`: Request timeout (default: `30`)
+- `api.cache_ttl_days`: Cache expiration in days (default: `90`)
+- `api.ssl_verify`: Enable SSL verification (default: `true`)
 
-- **Console**: Standard output (all environments)
-- **File**: `logs/` directory (production/testing)
+**Scraping Configuration:**
 
-Log levels:
+- `scraping.base_url`: MIT Living Wage Calculator base URL (default: `https://livingwage.mit.edu`)
+- `scraping.max_retries`: Maximum retry attempts (default: `3`)
+- `scraping.timeout_seconds`: Request timeout (default: `30`)
+- `scraping.cache_ttl_days`: Cache expiration in days (default: `30`)
+- `scraping.ssl_verify`: Enable SSL verification (default: `true`)
+- `scraping.min_delay_seconds`: Minimum delay between requests (default: `1.0`)
+- `scraping.max_delay_seconds`: Maximum delay between requests (default: `3.0`)
 
-- `DEBUG`: Detailed diagnostic information
-- `INFO`: General informational messages
-- `WARNING`: Warning messages
-- `ERROR`: Error messages
-- `CRITICAL`: Critical errors
+**Pipeline Configuration:**
 
-## Database Schema (Future)
+- `pipeline.min_success_rate`: Minimum success rate threshold (default: `0.8`)
+- `pipeline.target_states`: List of state abbreviations to process (default: `["NJ"]`)
 
-The project is designed to support PostgreSQL loading. Planned tables:
+### Environment Variables (`.env`)
 
-### Dimensional Tables
+**Required:**
 
-- **`dim_state`**: State reference codes
-- **`dim_county`**: County reference table with FIPS codes
+- `DB_HOST`: PostgreSQL host (default: `localhost`)
+- `DB_PORT`: PostgreSQL port (default: `5432`)
+- `DB_NAME`: Database name (default: `wage_etl`)
+- `DB_USER`: Database user (default: `postgres`)
+- `DB_PASSWORD`: Database password (required)
 
-### Staging Tables
+**Optional:**
 
-- **`stg_wages`**: Living wage data (hourly rates)
-- **`stg_expenses`**: Annual expense breakdowns
+- `LOG_LEVEL`: Logging level - DEBUG, INFO, WARNING, ERROR, CRITICAL (default: `INFO`)
+- `LOG_TO_FILE`: Enable file logging (default: `true`)
+- `PGADMIN_EMAIL`: PgAdmin login email (default: `admin@example.com`)
+- `PGADMIN_PASSWORD`: PgAdmin login password (default: `admin`)
 
-### Reject Tables
+### State FIPS Mapping ([`config/state_fips.json`](config/state_fips.json))
 
-- **`stg_wages_rejects`**: Invalid wage records with rejection reasons
-- **`stg_expenses_rejects`**: Invalid expense records
+Maps US state abbreviations to FIPS codes. Used for:
 
-## Caching
+- Filtering counties by state
+- Validating state inputs
+- Generating state-specific queries
 
-HTTP responses are cached to:
+## Links
 
-- Reduce API calls during development
-- Speed up re-runs
-- Respect rate limits
+**Data Sources:**
 
-**Cache Configuration:**
+- [MIT Living Wage Calculator](https://livingwage.mit.edu/) - Living wage data sourced from the Living Wage Institute via https://livingwage.mit.edu
+- [US Census Bureau API](https://www.census.gov/data/developers/data-sets.html) - Source of county and state metadata
+- [Census API Documentation](https://www.census.gov/data/developers/guidance/api-user-guide.html) - API usage guide
 
-- Census API: 90 days TTL
-- MIT Website: 30 days TTL
-- Location: `data/cache/`
+**Project Resources:**
 
-**Cache Management:**
+- [Documentation Tasks](https://github.com/users/Carlomos7/projects/9) - Kanban Board of Issues
 
-- Expired cache files are automatically cleared
-- Cache can be disabled per extractor instance
+## Licensing
 
-## Error Handling
+The code in this project is licensed under the MIT License.
 
-The pipeline includes comprehensive error handling:
+See the [LICENSE](LICENSE) file for the full text of the license.
 
-- **HTTP Errors**: Retry logic with exponential backoff
-- **Parsing Errors**: Graceful degradation with logging
-- **Validation Errors**: Records logged to reject tables (future)
-- **Network Errors**: Configurable timeout and retry settings
+**Copyright (c) 2025 Carlos Ray Segarra**
 
-## Performance Considerations
+## References
 
-- **Rate Limiting**: Configurable delays between requests
-- **Caching**: HTTP response caching reduces redundant calls
-- **Index Cache**: Fast CSV lookups without full file reads
-- **Batch Processing**: Process counties sequentially with progress tracking
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-[Add your license here]
-
-## Acknowledgments
-
-- **MIT Living Wage Calculator**: Data source for living wage calculations
-- **US Census Bureau**: County reference data and FIPS codes
-
-## Support
-
-For issues and questions:
-
-- Open an issue on GitHub
-- Check existing issues for solutions
-- Review the test files for usage examples
-
----
-
-**Built with:** Python 3.13, Pydantic, pandas, BeautifulSoup, requests, uv
+- [DOs and DON'Ts of Web Scraping in 2025](https://medium.com/@datajournal/dos-and-donts-of-web-scraping-e4f9b2a49431)
+- [Pydantic Setting Management Documentation](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
