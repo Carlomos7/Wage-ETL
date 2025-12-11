@@ -102,10 +102,6 @@ graph TD
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-If you want your prerequisites section to point to the **official uv installation docs**, here’s the clean, properly formatted version:
-
----
-
 ### Prerequisites
 
 Before you begin, ensure the following tools are installed:
@@ -179,66 +175,24 @@ Before you begin, ensure the following tools are installed:
 
    *(Or `python -m main` if installed with pip.)*
 
-**Example: Querying the data**
+**Querying the data**
 
-After running the pipeline, you can query the staging tables:
+After running the pipeline, you can query the staging tables. See [SQL docs](sql/migrations/README.md) for example queries and monitoring options.
 
-```sql
--- Check run status
-SELECT run_id, run_status, counties_processed, wages_loaded, expenses_loaded
-FROM etl_runs
-ORDER BY run_start_timestamp DESC
-LIMIT 5;
+### Configuration
 
--- View sample wage data
-SELECT county_fips, adults, working_adults, children, wage_type, hourly_wage
-FROM stg_wages
-LIMIT 10;
-
--- Check for rejected records
-SELECT COUNT(*) as reject_count, rejection_reason
-FROM stg_wages_rejects
-GROUP BY rejection_reason;
-```
-
-### Initial Configuration
-
-The pipeline is configured through YAML files and environment variables. By default, the configuration files are set as follows:
-
-**[`config/config.yaml`](config/config.yaml)** - Main pipeline configuration:
-
-- **API Configuration**:
-  - Census API base URL: `https://api.census.gov/data`
-  - Dataset: `2023/acs/acs5`
-  - Cache TTL: 90 days
-  - Max retries: 3
-  - Timeout: 30 seconds
-
-- **Scraping Configuration**:
-  - Base URL: `https://livingwage.mit.edu`
-  - Cache TTL: 30 days
-  - Delay between requests: 1-3 seconds (randomized)
-  - Max retries: 3
-  - Timeout: 30 seconds
-
-- **Pipeline Configuration**:
-  - Target states: `["NJ"]` (default - modify to process other states)
-  - Minimum success rate: 0.8 (80%)
-
-**State FIPS Mapping** (`config/state_fips.json`):
-
-- Maps state abbreviations to FIPS codes
-- Used for filtering counties by state
-
-To process different states, edit `config/config.yaml`:
+The pipeline is configured through YAML files and environment variables. The most important setting is the target states in [`config/config.yaml`](config/config.yaml):
 
 ```yaml
 pipeline:
   target_states:
-    - "NY"
-    - "CA"
-    - "TX"
+    - "NJ"  # Default - modify to process other states
+    # - "NY"
+    # - "CA"
+    # - "TX"
 ```
+
+For all configuration options, see [config docs](config/README.md).
 
 ## Running the tests with coverage
 
@@ -299,6 +253,8 @@ The pipeline will:
 
 ### Pipeline Flow
 
+The ETL pipeline follows a three-stage process:
+
 ```mint
 1. Extract
    ├── Census API → County FIPS codes
@@ -318,6 +274,8 @@ The pipeline will:
    └── Update Run → etl_runs table
 ```
 
+For more details on each stage, see the [pipeline doc](src/README.md).
+
 ### Monitoring Pipeline Execution
 
 **View logs:**
@@ -325,79 +283,28 @@ The pipeline will:
 - Console output: Real-time structured logs
 - File logs: `logs/etl.log` and `logs/error.log`
 
-**Check run status in database:**
+**Query the database:**
 
-```sql
-SELECT 
-    run_id,
-    run_status,
-    run_start_timestamp,
-    run_end_timestamp,
-    state_fips,
-    counties_processed,
-    wages_loaded,
-    wages_rejected,
-    expenses_loaded,
-    expenses_rejected
-FROM etl_runs
-ORDER BY run_start_timestamp DESC;
-```
-
-**Query staging data:**
-
-```sql
--- Sample wage data
-SELECT * FROM stg_wages LIMIT 10;
-
--- Sample expense data
-SELECT * FROM stg_expenses LIMIT 10;
-
--- Rejected records
-SELECT * FROM stg_wages_rejects;
-SELECT * FROM stg_expenses_rejects;
-```
+See the [SQL docs](sql/migrations/README.md) for example SQL queries to check run status, view staging data, and monitor rejected records.
 
 ## Documentation
 
-- [Documentation Tasks](https://github.com/users/Carlomos7/projects/9) - Kanban Board of Issues
+[Task Documentation](https://github.com/users/Carlomos7/projects/9)
+
+- [src/](src/README.md) - ETL pipeline overview
+  - [extract/](src/extract/README.md) - HTTP client, caching, scraping
+  - [transform/](src/transform/README.md) - Wide→long, currency cleaning, Pydantic
+  - [load/](src/load/README.md) - Bulk COPY, upserts, run tracking
+- [config doc](config/README.md) - Settings, environment variables, YAML configuration
+- [SQL doc](sql/migrations/README.md) - Database migrations (Flyway), schemas, and query examples
 
 ## Configuration
 
-### YAML Configuration ([`config/config.yaml`](config/config.yaml))
+For detailed configuration documentation, see the [config doc](config/README.md). This includes:
 
-**API Configuration:**
-
-- `api.base_url`: Census API base URL (default: `https://api.census.gov/data`)
-- `api.dataset`: Census dataset identifier (default: `2023/acs/acs5`)
-- `api.variables`: List of variables to fetch (default: `["NAME"]`)
-- `api.county`: County filter (default: `["*"]` for all counties)
-- `api.max_retries`: Maximum retry attempts (default: `3`)
-- `api.timeout_seconds`: Request timeout (default: `30`)
-- `api.cache_ttl_days`: Cache expiration in days (default: `90`)
-- `api.ssl_verify`: Enable SSL verification (default: `true`)
-
-**Scraping Configuration:**
-
-- `scraping.base_url`: MIT Living Wage Calculator base URL (default: `https://livingwage.mit.edu`)
-- `scraping.max_retries`: Maximum retry attempts (default: `3`)
-- `scraping.timeout_seconds`: Request timeout (default: `30`)
-- `scraping.cache_ttl_days`: Cache expiration in days (default: `30`)
-- `scraping.ssl_verify`: Enable SSL verification (default: `true`)
-- `scraping.min_delay_seconds`: Minimum delay between requests (default: `1.0`)
-- `scraping.max_delay_seconds`: Maximum delay between requests (default: `3.0`)
-
-**Pipeline Configuration:**
-
-- `pipeline.min_success_rate`: Minimum success rate threshold (default: `0.8`)
-- `pipeline.target_states`: List of state abbreviations to process (default: `["NJ"]`)
-
-### State FIPS Mapping ([`config/state_fips.json`](config/state_fips.json))
-
-Maps US state abbreviations to FIPS codes. Used for:
-
-- Filtering counties by state
-- Validating state inputs
-- Generating state-specific queries
+- Complete YAML configuration reference (`config.yaml`)
+- State FIPS mapping (`state_fips.json`)
+- Common configuration changes and examples
 
 ## Data Sources
 
@@ -429,4 +336,5 @@ See the [LICENSE](LICENSE) file for the full text of the license.
   [https://docs.pydantic.dev/latest/concepts/pydantic_settings/](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
 - ArjanCodes / Testing Tutorial. *How to Mock psycopg2 with pytest for Efficient Database Testing.*
   [https://www.youtube.com/watch?v=Z2jjKsSp6M0](https://www.youtube.com/watch?v=Z2jjKsSp6M0)
-
+- Real Python. *Inheritance and Composition: A Python OOP Guide.*
+  [https://realpython.com/inheritance-composition-python/](https://realpython.com/inheritance-composition-python/)
