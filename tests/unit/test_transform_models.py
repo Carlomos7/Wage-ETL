@@ -4,7 +4,7 @@ Tests for transform models.
 import pytest
 from datetime import date
 from pydantic import ValidationError
-from src.transform.models import BaseRecord, WageRecord, ExpenseRecord
+from wage_etl.transform.models import BaseRecord, WageRecord, ExpenseRecord
 
 
 class TestBaseRecord:

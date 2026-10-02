@@ -3,7 +3,7 @@ Tests for transform validation functions.
 """
 import pytest
 import pandas as pd
-from src.transform.validation import (
+from wage_etl.transform.validation import (
     validate_wide_format_input,
     validate_wages,
     validate_expenses,

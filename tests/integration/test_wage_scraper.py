@@ -2,11 +2,11 @@
 Tests for wage scraper functionality.
 """
 import pytest
-from unittest.mock import Mock, patch
-from bs4 import BeautifulSoup
+from unittest.mock import Mock
 
-from src.extract.wage_scraper import WageExtractor
-from src.extract.http import HttpClient
+from wage_etl.config.models import ScrapingConfig
+from wage_etl.extract.wage_scraper import WageExtractor
+from wage_etl.extract.http import HttpClient
 
 
 class TestWageExtractor:
@@ -67,20 +67,12 @@ class TestWageExtractor:
         </html>
         """
 
-    @patch('src.extract.wage_scraper.HttpClient')
-    @patch('src.extract.wage_scraper.get_settings')
-    def test_init(self, mock_get_settings, mock_http_client):
+    def test_init(self, mock_client):
         """Test WageExtractor initialization."""
-        mock_settings = Mock()
-        mock_settings.scraping.base_url = "https://example.com"
-        mock_settings.scraping.timeout_seconds = 30
-        mock_settings.scraping.max_retries = 3
-        mock_settings.scraping.ssl_verify = True
-        mock_settings.scraping.proxies = None
-        mock_get_settings.return_value = mock_settings
-        
-        extractor = WageExtractor(use_cache=False)
-        assert extractor._client is not None
+        scraping = ScrapingConfig(base_url="https://example.com")
+        extractor = WageExtractor(mock_client, scraping)
+        assert extractor._client is mock_client
+        assert extractor._scraping_config is scraping
 
     def test_get_county_data(self, mock_client, sample_html):
         """Test getting county data."""

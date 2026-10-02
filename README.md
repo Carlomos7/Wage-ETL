@@ -143,14 +143,22 @@ Before you begin, ensure the following tools are installed:
    Create a `.env` file in the project root:
 
    ```bash
-   # Database Configuration
+   # Database. Prefixed names avoid colliding with other tools.
+   # The flat DB_* names below are still accepted.
+   WAGE_ETL_DB__HOST=localhost
+   WAGE_ETL_DB__PORT=5432
+   WAGE_ETL_DB__NAME=wage_etl
+   WAGE_ETL_DB__USER=postgres
+   WAGE_ETL_DB__PASSWORD=your_password_here
+
+   # Docker Compose reads these same flat names for Postgres.
    DB_HOST=localhost
    DB_PORT=5432
    DB_NAME=wage_etl
    DB_USER=postgres
    DB_PASSWORD=your_password_here
 
-   # Optional: Logging Configuration
+   # Optional logging. WAGE_ETL_LOGGING__LEVEL also works.
    LOG_LEVEL=INFO
    LOG_TO_FILE=true
    ```
@@ -170,10 +178,10 @@ Before you begin, ensure the following tools are installed:
 5. **Run the ETL pipeline**
 
    ```bash
-   uv run -m main
+   uv run wage-etl
    ```
 
-   *(Or `python -m main` if installed with pip.)*
+   *(Or `python -m wage_etl` if installed with pip.)*
 
 **Querying the data**
 
@@ -238,7 +246,7 @@ After running with coverage, open `htmlcov/index.html` in your browser to see th
 2. **Run the ETL pipeline**:
 
    ```bash
-   uv run -m main
+   uv run wage-etl
    ```
 
 The pipeline will:

@@ -3,10 +3,11 @@ Tests for Census API extractor functionality.
 """
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-from src.extract.census_api import CensusExtractor
-from src.extract.http import HttpClient
+from wage_etl.config.models import ApiConfig
+from wage_etl.extract.census_api import CensusExtractor
+from wage_etl.extract.http import HttpClient
 
 
 class TestCensusExtractor:
@@ -35,39 +36,22 @@ class TestCensusExtractor:
             ["Alaska", "02"],
         ]
 
-    @patch('src.extract.census_api.HttpClient')
-    @patch('src.extract.census_api.get_settings')
-    def test_init(self, mock_get_settings, mock_http_client):
+    def test_init(self, mock_client):
         """Test CensusExtractor initialization."""
-        mock_settings = Mock()
-        mock_api_config = Mock()
-        mock_api_config.base_url = "https://api.census.gov/data"
-        mock_api_config.dataset = "2023/acs/acs5"
-        mock_api_config.variables = ["NAME"]
-        mock_api_config.county = ["*"]
-        mock_api_config.timeout_seconds = 30
-        mock_api_config.max_retries = 3
-        mock_api_config.ssl_verify = True
-        mock_api_config.proxies = None
-        mock_api_config.cache_ttl_days = 90
-        mock_settings.api = mock_api_config
-        mock_settings.cache_dir = Mock()
-        
-        # Mock pipeline config
-        mock_pipeline = Mock()
-        mock_pipeline.target_states = ["*"]
-        mock_settings.pipeline = mock_pipeline
-        
-        # Mock state config
-        mock_state_config = Mock()
-        mock_state_config.fips_map = {"AL": "01", "AK": "02", "NJ": "34"}
-        mock_settings.state_config = mock_state_config
-        
-        mock_get_settings.return_value = mock_settings
+        api_config = ApiConfig(
+            base_url="https://api.census.gov/data",
+            dataset="2023/acs/acs5",
+            variables=["NAME"],
+            county=["*"],
+            cache_ttl_days=90,
+        )
+        fips_map = {"AL": "01", "AK": "02", "NJ": "34"}
 
-        extractor = CensusExtractor(use_cache=False)
-        assert extractor._client is not None
-        assert extractor._api_config == mock_api_config
+        extractor = CensusExtractor(mock_client, api_config, fips_map, ["*"])
+
+        assert extractor._client is mock_client
+        assert extractor._api_config == api_config
+        assert extractor.state_fips_list == ["01", "02", "34"]
 
     def test_get_counties(self, mock_client, sample_county_data):
         """Test getting counties for a state."""

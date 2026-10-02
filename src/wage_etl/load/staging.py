@@ -6,9 +6,9 @@ from io import StringIO
 
 import pandas as pd
 
-from config.logging import get_logger
-from src.load.db import get_connection, get_cursor
-from src.load.bulk_ops import (
+from wage_etl.config.logging import get_logger
+from wage_etl.load.db import Database
+from wage_etl.load.bulk_ops import (
     copy_to_temp,
     WAGES_COLUMNS,
     WAGES_COLUMN_DEFS,
@@ -22,7 +22,7 @@ ALLOWED_REJECT_TABLES = frozenset(
     {"stg_wages_rejects", "stg_expenses_rejects"})
 
 
-def bulk_upsert_wages(df: pd.DataFrame, run_id: int) -> int:
+def bulk_upsert_wages(db: Database, df: pd.DataFrame, run_id: int) -> int:
     """
     Bulk upsert wages: COPY to temp → INSERT ON CONFLICT.
 
@@ -43,7 +43,7 @@ def bulk_upsert_wages(df: pd.DataFrame, run_id: int) -> int:
     # Enforce column order
     df = df[WAGES_COLUMNS]
 
-    with get_connection() as conn:
+    with db.connect() as conn:
         copy_to_temp(conn, df, "tmp_wages", WAGES_COLUMNS, WAGES_COLUMN_DEFS)
 
         with conn.cursor() as cur:
@@ -63,7 +63,7 @@ def bulk_upsert_wages(df: pd.DataFrame, run_id: int) -> int:
     return count
 
 
-def bulk_upsert_expenses(df: pd.DataFrame, run_id: int) -> int:
+def bulk_upsert_expenses(db: Database, df: pd.DataFrame, run_id: int) -> int:
     """
     Bulk upsert expenses: COPY to temp → INSERT ON CONFLICT.
 
@@ -85,7 +85,7 @@ def bulk_upsert_expenses(df: pd.DataFrame, run_id: int) -> int:
     # Enforce column order
     df = df[EXPENSES_COLUMNS]
 
-    with get_connection() as conn:
+    with db.connect() as conn:
         copy_to_temp(conn, df, "tmp_expenses",
                      EXPENSES_COLUMNS, EXPENSES_COLUMN_DEFS)
 
@@ -106,7 +106,7 @@ def bulk_upsert_expenses(df: pd.DataFrame, run_id: int) -> int:
     return count
 
 
-def load_rejects(records: list[dict], run_id: int, table: str) -> int:
+def load_rejects(db: Database, records: list[dict], run_id: int, table: str) -> int:
     """
     Load rejected records to reject table using batch COPY.
 
@@ -147,7 +147,7 @@ def load_rejects(records: list[dict], run_id: int, table: str) -> int:
     df.to_csv(buffer, index=False, header=False)
     buffer.seek(0)
 
-    with get_connection() as conn:
+    with db.connect() as conn:
         with conn.cursor() as cur:
             cur.copy_expert(
                 f"COPY {table} (run_id, raw_data, rejection_reason) FROM STDIN WITH CSV",
@@ -159,13 +159,13 @@ def load_rejects(records: list[dict], run_id: int, table: str) -> int:
     return count
 
 
-def get_staging_counts() -> dict[str, int]:
+def get_staging_counts(db: Database) -> dict[str, int]:
     """Get row counts for staging tables."""
     counts = {}
     tables = ["stg_wages", "stg_expenses",
               "stg_wages_rejects", "stg_expenses_rejects"]
 
-    with get_cursor() as cur:
+    with db.cursor() as cur:
         for table in tables:
             cur.execute(f"SELECT COUNT(*) FROM {table}")
             counts[table] = cur.fetchone()[0]
@@ -173,12 +173,12 @@ def get_staging_counts() -> dict[str, int]:
     return counts
 
 
-def truncate_staging() -> None:
+def truncate_staging(db: Database) -> None:
     """Truncate all staging tables."""
     tables = ["stg_wages", "stg_expenses",
               "stg_wages_rejects", "stg_expenses_rejects"]
 
-    with get_cursor() as cur:
+    with db.cursor() as cur:
         for table in tables:
             cur.execute(f"TRUNCATE TABLE {table} CASCADE")
 

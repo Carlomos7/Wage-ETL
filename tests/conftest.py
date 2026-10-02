@@ -5,8 +5,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock
 
-from src.extract.cache import ResponseCache
-from src.extract.http import HttpClient
+from wage_etl.extract.cache import ResponseCache
+from wage_etl.extract.http import HttpClient
 
 
 @pytest.fixture

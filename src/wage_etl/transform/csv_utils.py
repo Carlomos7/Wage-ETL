@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from config.logging import get_logger
-from config.settings import get_settings
+from wage_etl.config.logging import get_logger
 
 logger = get_logger(module=__name__)
 
@@ -31,22 +30,22 @@ def save_dataframe_to_csv(
     logger.debug(f'Saved {len(df)} records to {filepath}')
 
 
-def get_output_paths(state_fips: str, year: int) -> tuple[Path, Path]:
+def get_output_paths(output_dir: Path, state_fips: str, year: int) -> tuple[Path, Path]:
     '''
     Get the output file paths for wages and expenses data.
 
     Args:
+        output_dir: Directory that holds the year folders
         state_fips: State FIPS code
         year: Year for the data
 
     Returns:
         Tuple of (wages_path, expenses_path)
     '''
-    settings = get_settings()
-    output_dir = settings.raw_dir / str(year)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    year_dir = output_dir / str(year)
+    year_dir.mkdir(parents=True, exist_ok=True)
 
-    wages_path = output_dir / f'wages_{state_fips}.csv'
-    expenses_path = output_dir / f'expenses_{state_fips}.csv'
+    wages_path = year_dir / f'wages_{state_fips}.csv'
+    expenses_path = year_dir / f'expenses_{state_fips}.csv'
 
     return wages_path, expenses_path

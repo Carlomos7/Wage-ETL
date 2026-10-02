@@ -3,12 +3,12 @@ Tests for configuration models.
 """
 import pytest
 from pydantic import ValidationError
-from config.models import (
+from wage_etl.config.models import (
     HttpClientConfig,
     ApiConfig,
     ScrapingConfig,
     PipelineConfig,
-    StateConfig,
+    StateCodes,
 )
 
 
@@ -18,7 +18,7 @@ class TestHttpClientConfig:
     def test_valid_data(self):
         """Test HttpClientConfig with valid data."""
         config = HttpClientConfig(base_url="https://example.com")
-        assert config.base_url == "https://example.com"
+        assert str(config.base_url).rstrip("/") == "https://example.com"
         assert config.max_retries == 3
         assert config.timeout_seconds == 30
 
@@ -39,7 +39,7 @@ class TestApiConfig:
             variables=["NAME"],
             county=["*"]
         )
-        assert api_config.base_url == "https://api.census.gov/data"
+        assert str(api_config.base_url).rstrip("/") == "https://api.census.gov/data"
         assert api_config.dataset == "2023/acs/acs5"
         assert api_config.variables == ["NAME"]
         assert api_config.county == ["*"]
@@ -62,7 +62,7 @@ class TestScrapingConfig:
     def test_valid_data(self):
         """Test ScrapingConfig with valid data."""
         scraping_config = ScrapingConfig(base_url="https://livingwage.mit.edu")
-        assert scraping_config.base_url == "https://livingwage.mit.edu"
+        assert str(scraping_config.base_url).rstrip("/") == "https://livingwage.mit.edu"
         assert scraping_config.min_delay_seconds == 1.0
         assert scraping_config.max_delay_seconds == 3.0
 
@@ -74,6 +74,25 @@ class TestScrapingConfig:
                 min_delay_seconds=5.0,
                 max_delay_seconds=2.0,
             )
+
+    def test_zero_min_delay_still_checked(self):
+        """A min delay of 0 still rejects a smaller max delay."""
+        with pytest.raises(ValidationError):
+            ScrapingConfig(
+                base_url="https://example.com",
+                min_delay_seconds=0,
+                max_delay_seconds=-1,
+            )
+
+    def test_zero_delays_are_valid(self):
+        """Equal delays of 0 are allowed."""
+        config = ScrapingConfig(
+            base_url="https://example.com",
+            min_delay_seconds=0,
+            max_delay_seconds=0,
+        )
+        assert config.min_delay_seconds == 0
+        assert config.max_delay_seconds == 0
 
 
 class TestPipelineConfig:
@@ -92,16 +111,16 @@ class TestPipelineConfig:
 
 
 
-class TestStateConfig:
-    """Tests for StateConfig."""
+class TestStateCodes:
+    """Tests for StateCodes."""
 
     def test_valid_data(self):
-        """Test StateConfig with valid FIPS map."""
+        """Test StateCodes with valid FIPS map."""
         fips_map = {"AL": "01", "AK": "02"}
-        state_config = StateConfig(fips_map=fips_map)
+        state_config = StateCodes(fips_map=fips_map)
         assert state_config.fips_map == fips_map
 
     def test_invalid_empty_fips_map(self):
-        """Test StateConfig with empty FIPS map."""
+        """Test StateCodes with empty FIPS map."""
         with pytest.raises(ValidationError):
-            StateConfig(fips_map={})
+            StateCodes(fips_map={})

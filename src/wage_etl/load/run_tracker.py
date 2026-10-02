@@ -4,20 +4,20 @@ ETL run tracking.
 from datetime import datetime
 from typing import Optional
 
-from config.logging import get_logger
-from src.load.db import get_cursor
+from wage_etl.config.logging import get_logger
+from wage_etl.load.db import Database
 
 logger = get_logger(module=__name__)
 
 
-def start_run(state_fips: str) -> int:
+def start_run(db: Database, state_fips: str) -> int:
     """
     Start an ETL run.
 
     Returns:
         run_id for tracking
     """
-    with get_cursor() as cur:
+    with db.cursor() as cur:
         cur.execute(
             """
             INSERT INTO etl_runs (run_start_timestamp, run_status, state_fips, scrape_date)
@@ -33,6 +33,7 @@ def start_run(state_fips: str) -> int:
 
 
 def end_run(
+    db: Database,
     run_id: int,
     status: str,
     counties: int = 0,
@@ -55,7 +56,7 @@ def end_run(
         expenses_rejected: Expense records rejected
         error: Error message if failed
     """
-    with get_cursor() as cur:
+    with db.cursor() as cur:
         cur.execute(
             """
             UPDATE etl_runs SET
@@ -76,9 +77,9 @@ def end_run(
     logger.info(f"Ended ETL run {run_id}: {status}")
 
 
-def get_latest_run(state_fips: Optional[str] = None) -> Optional[dict]:
+def get_latest_run(db: Database, state_fips: Optional[str] = None) -> Optional[dict]:
     """Get the most recent ETL run."""
-    with get_cursor(dict_cursor=True) as cur:
+    with db.cursor(dict_cursor=True) as cur:
         if state_fips:
             cur.execute(
                 """

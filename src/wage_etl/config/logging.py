@@ -5,86 +5,82 @@ import json
 import logging
 import logging.config
 from pathlib import Path
-from config.settings import get_settings
+
+from wage_etl.config.models import LoggingSettings, PathSettings
+
+DEFAULT_LOGGER_NAME = "wage_etl"
 
 
-def setup_logging() -> logging.Logger:
+def setup_logging(logging_settings: LoggingSettings, paths: PathSettings) -> logging.Logger:
     """
     Configure logging using JSON config file.
-    Environment differences handled by settings (log_level, log_to_file).
+    Environment differences handled by settings (level, to_file).
     """
-    settings = get_settings()
-    
-    # Load JSON config
-    config_file = settings.logging_config_file
-    
+    config_file = logging_settings.config_file
+
     if not config_file.exists():
         raise FileNotFoundError(f"Logging configuration not found: {config_file}")
-    
-    with open(config_file, 'r', encoding='utf-8') as f:
-        config = json.load(f)
-    
-    # Apply log level from settings to all loggers
-    for logger_config in config.get('loggers', {}).values():
-        logger_config['level'] = settings.log_level
-    
-    # Update log file paths
-    if settings.log_to_file:
-        settings.log_dir.mkdir(parents=True, exist_ok=True)
-        
-        for handler in config.get('handlers', {}).values():
-            if 'filename' in handler:
-                filename = Path(handler['filename']).name
-                handler['filename'] = str(settings.log_dir / filename)
+
+    with open(config_file, "r", encoding="utf-8") as handle:
+        config = json.load(handle)
+
+    for logger_config in config.get("loggers", {}).values():
+        logger_config["level"] = logging_settings.level
+
+    if logging_settings.to_file:
+        paths.log_dir.mkdir(parents=True, exist_ok=True)
+
+        for handler in config.get("handlers", {}).values():
+            if "filename" in handler:
+                filename = Path(handler["filename"]).name
+                handler["filename"] = str(paths.log_dir / filename)
     else:
-        # Remove file handlers if log_to_file is False
-        config['handlers'] = {
-            k: v for k, v in config.get('handlers', {}).items()
-            if v.get('class') != 'logging.handlers.RotatingFileHandler'
+        config["handlers"] = {
+            key: value
+            for key, value in config.get("handlers", {}).items()
+            if value.get("class") != "logging.handlers.RotatingFileHandler"
         }
-        
-        # Update loggers to only use console
-        for logger_config in config.get('loggers', {}).values():
-            logger_config['handlers'] = ['console']
-    
-    # Apply the configuration
+
+        for logger_config in config.get("loggers", {}).values():
+            logger_config["handlers"] = ["console"]
+
     logging.config.dictConfig(config)
-    
-    # Get and return the logger
-    logger = logging.getLogger(settings.app_name)
-    logger.info(f"Logging initialized - Level: {settings.log_level}")
-    
+
+    logger = logging.getLogger(logging_settings.name)
+    logger.info(f"Logging initialized - Level: {logging_settings.level}")
+
     return logger
 
 
-def get_logger(name: str = get_settings().app_name, module: str = None) -> logging.Logger:
+def get_logger(name: str = DEFAULT_LOGGER_NAME, module: str | None = None) -> logging.Logger:
     """
     Get a logger for a specific module or the default logger.
+
     Args:
         name: The name of the logger.
         module: The name of the module to get a logger for.
+
     Returns:
         A logger for the specific module or the default logger.
     """
     if module:
         return logging.getLogger(name).getChild(module)
-    else:
-        return logging.getLogger(name)
+    return logging.getLogger(name)
 
 
 def format_log_with_metadata(message: str, year: int, state_fips: str, county_fips: str) -> str:
-    '''
+    """
     Format log message with structured metadata for provenance tracking.
-    
+
     Args:
         message: The log message
         year: Year of the scrape
         state_fips: State FIPS code
         county_fips: County FIPS code (will be zero-padded)
-    
+
     Returns:
         Formatted message with metadata prefix
-    '''
+    """
     county_fips_str = str(county_fips).zfill(3)
     metadata = f"[year={year}][state={state_fips}][county={county_fips_str}]"
     return f"{metadata} {message}"

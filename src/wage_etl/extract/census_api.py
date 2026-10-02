@@ -3,9 +3,9 @@ Census API extractor for county and state data.
 """
 from typing import Any
 import json
-from config import get_settings
-from src.extract.cache import ResponseCache
-from src.extract.http import HttpClient
+
+from wage_etl.config.models import ApiConfig
+from wage_etl.extract.http import HttpClient
 
 
 class CensusExtractor:
@@ -15,33 +15,18 @@ class CensusExtractor:
     Uses HttpClient for HTTP operations with caching and retry logic.
     """
 
-    def __init__(self, use_cache: bool = True):
-        settings = get_settings()
-        self._settings = settings
-        self._api_config = settings.api
-        self._pipeline = settings.pipeline
-        self._state_fips_map = settings.state_config.fips_map
-
-        # Resolve states into a normalized list of FIPS codes
+    def __init__(
+        self,
+        client: HttpClient,
+        api_config: ApiConfig,
+        fips_map: dict[str, str],
+        target_states: list[str],
+    ) -> None:
+        self._client = client
+        self._api_config = api_config
+        self._state_fips_map = fips_map
+        self._target_states = target_states
         self.state_fips_list = self._resolve_state_fips_list()
-
-        cache = None
-        if use_cache:
-            cache_dir = settings.cache_dir / "census"
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            cache = ResponseCache(cache_dir=cache_dir,
-                                  ttl_days=self._api_config.cache_ttl_days)
-            cache.clear_expired()
-
-        # Initialize the HTTP client for Census API
-        self._client = HttpClient(
-            base_url=self._api_config.base_url,
-            timeout=self._api_config.timeout_seconds,
-            max_retries=self._api_config.max_retries,
-            ssl_verify=self._api_config.ssl_verify,
-            proxies=self._api_config.proxies,
-            cache=cache,
-        )
 
     # Helpers
 
@@ -49,7 +34,7 @@ class CensusExtractor:
         """
         Convert target state abbreviations or "*" into FIPS codes.
         """
-        target_states = self._pipeline.target_states
+        target_states = self._target_states
 
         # ALL STATES
         if target_states == ["*"]:

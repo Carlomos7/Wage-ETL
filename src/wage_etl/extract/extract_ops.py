@@ -4,8 +4,8 @@ Extraction operations and result types.
 from dataclasses import dataclass
 from typing import Optional, Generator
 from datetime import datetime
-from src.extract.census_api import CensusExtractor
-from src.extract.wage_scraper import WageExtractor
+from wage_etl.extract.census_api import CensusExtractor
+from wage_etl.extract.wage_scraper import WageExtractor
 
 
 @dataclass
@@ -21,10 +21,13 @@ class ScrapeResult:
 # --- Wage scraping ---
 
 
-def scrape_county(state_fips: str, county_fips: str) -> ScrapeResult:
-    """Scrape a single county. Creates its own session."""
-    with WageExtractor() as extractor:
-        return scrape_county_with_extractor(extractor, state_fips, county_fips)
+def scrape_county(
+    extractor: WageExtractor,
+    state_fips: str,
+    county_fips: str,
+) -> ScrapeResult:
+    """Scrape a single county with an existing extractor."""
+    return scrape_county_with_extractor(extractor, state_fips, county_fips)
 
 
 def scrape_county_with_extractor(
@@ -53,44 +56,39 @@ def scrape_county_with_extractor(
 
 
 def scrape_state_counties(
+    extractor: WageExtractor,
     state_fips: str,
-    county_codes: list[str]
+    county_codes: list[str],
 ) -> Generator[ScrapeResult, None, None]:
-    """Yield ScrapeResults for each county, using a single session."""
-    with WageExtractor() as extractor:
-        for county_fips in county_codes:
-            yield scrape_county_with_extractor(extractor, state_fips, county_fips)
+    """Yield ScrapeResults for each county, using the given extractor."""
+    for county_fips in county_codes:
+        yield scrape_county_with_extractor(extractor, state_fips, county_fips)
 
 # --- Census lookups ---
 
 
-def get_states() -> list[dict]:
+def get_states(extractor: CensusExtractor) -> list[dict]:
     """Get all US states."""
-    with CensusExtractor() as extractor:
-        return extractor.get_states()
+    return extractor.get_states()
 
 
-def get_all_counties() -> list[dict]:
-    """Get all counties for all target states (from YAML)."""
-    with CensusExtractor() as extractor:
-        return extractor.get_counties()
+def get_all_counties(extractor: CensusExtractor) -> list[dict]:
+    """Get all counties for the extractor's target states."""
+    return extractor.get_counties()
 
 
-def get_counties_for_state(state_fips: str) -> list[dict]:
+def get_counties_for_state(extractor: CensusExtractor, state_fips: str) -> list[dict]:
     """Get all counties for a specific state (from FIPS)."""
     state_fips = state_fips.zfill(2)
-    with CensusExtractor() as extractor:
-        all_counties = extractor.get_counties()
-        return [c for c in all_counties if c["state_fips"] == state_fips]
+    return [c for c in extractor.get_counties() if c["state_fips"] == state_fips]
 
 
-def get_county_codes_for_state(state_fips: str) -> list[str]:
+def get_county_codes_for_state(extractor: CensusExtractor, state_fips: str) -> list[str]:
     """Get county FIPS codes for a state."""
-    counties = get_counties_for_state(state_fips)
+    counties = get_counties_for_state(extractor, state_fips)
     return [c["county_fips"] for c in counties]
 
 
-def get_county_codes() -> list[str]:
-    """Get county FIPS codes for all states."""
-    with CensusExtractor() as extractor:
-        return extractor.get_county_codes()
+def get_county_codes(extractor: CensusExtractor) -> list[str]:
+    """Get county FIPS codes for the extractor's target states."""
+    return extractor.get_county_codes()

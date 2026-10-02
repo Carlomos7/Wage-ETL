@@ -1,11 +1,11 @@
 """
 Data extraction from web sources and APIs.
 """
-from src.extract.cache import ResponseCache
-from src.extract.http import HttpClient
-from src.extract.census_api import CensusExtractor
-from src.extract.wage_scraper import WageExtractor
-from src.extract.extract_ops import (
+from wage_etl.extract.cache import ResponseCache
+from wage_etl.extract.http import HttpClient
+from wage_etl.extract.census_api import CensusExtractor
+from wage_etl.extract.wage_scraper import WageExtractor
+from wage_etl.extract.extract_ops import (
     ScrapeResult,
     scrape_county,
     scrape_county_with_extractor,
