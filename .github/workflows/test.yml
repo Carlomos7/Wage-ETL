@@ -12,14 +12,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    env:
-      ENVIRONMENT: testing
-      WAGE_ETL_DB__HOST: localhost
-      WAGE_ETL_DB__PORT: 5432
-      WAGE_ETL_DB__NAME: test_db
-      WAGE_ETL_DB__USER: test_user
-      WAGE_ETL_DB__PASSWORD: test_password
 
     steps:
     - name: Checkout repository
@@ -37,6 +29,9 @@ jobs:
 
     - name: Install dependencies
       run: uv sync
+
+    - name: Lint
+      run: uv run ruff check .
 
     - name: Run tests with coverage
       run: |

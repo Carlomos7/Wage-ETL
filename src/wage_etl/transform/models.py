@@ -3,7 +3,7 @@ Transform models.
 """
 from typing import Literal
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
-from datetime import date, datetime
+from datetime import date
 
 
 class BaseRecord(BaseModel):

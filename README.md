@@ -97,6 +97,7 @@ graph TD
 
 - pytest 9.0.2 - Testing framework
 - coverage.py 7.13.0 - Code coverage analysis
+- Ruff - Linter, run in CI
 
 ## Getting Started
 
@@ -153,13 +154,9 @@ Before you begin, ensure the following tools are installed:
    # Optional logging
    WAGE_ETL_LOGGING__LEVEL=INFO
    WAGE_ETL_LOGGING__TO_FILE=true
-
-   # Docker Compose uses these to start Postgres.
-   DB_PORT=5432
-   DB_NAME=wage_etl
-   DB_USER=postgres
-   DB_PASSWORD=your_password_here
    ```
+
+   Docker Compose reads those same `WAGE_ETL_DB__*` names to start Postgres.
 
 4. **Start the database infrastructure**
 

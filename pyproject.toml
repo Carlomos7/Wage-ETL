@@ -10,17 +10,21 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.14.2",
-    "coverage>=7.13.0",
     "pandas>=2.3.3",
-    "pathlib>=1.0.1",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.4",
     "pydantic-settings[yaml]>=2.12.0",
-    "pylint>=4.0.4",
-    "pytest>=9.0.2",
     "python-dotenv>=1.2.1",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.13.0",
+    "pylint>=4.0.4",
+    "pytest>=9.0.2",
+    "ruff>=0.14.0",
 ]
 
 [project.scripts]
@@ -46,3 +50,6 @@ precision = 2
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

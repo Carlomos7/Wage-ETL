@@ -38,7 +38,7 @@ __all__ = [
     'ExpenseRecord',
     # Constants
     'FAMILY_CONFIG_MAP',
-    'CATEGORY_MAP'
+    'CATEGORY_MAP',
     # Normalizers
     'normalize_header_for_lookup',
     'get_family_config_metadata',

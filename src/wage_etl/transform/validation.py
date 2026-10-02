@@ -2,8 +2,6 @@ import pandas as pd
 from wage_etl.transform.models import WageRecord, ExpenseRecord
 from wage_etl.transform.pandas_ops import dataframe_to_models
 
-NON_FAMILY_COLS = {"category", "county_fips"}
-
 
 def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
     '''
@@ -17,18 +15,11 @@ def validate_wide_format_input(df: pd.DataFrame) -> tuple[bool, list[str]]:
         return False, errors
 
     # Normalize column names
-    col_map = {c.lower(): c for c in df.columns}
-    cols_lower = set(col_map.keys())
+    cols_lower = {c.lower() for c in df.columns}
 
     # Required column checks
     if "category" not in cols_lower:
         errors.append("'category' column not found")
-
-    # Family configuration columns
-    family_cols = [
-        col_map[c] for c in cols_lower
-        if c not in NON_FAMILY_COLS
-    ]
 
     # Missing Value Validation
     total_cells = df.shape[0] * df.shape[1]
