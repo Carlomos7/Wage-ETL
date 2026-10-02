@@ -26,7 +26,7 @@ Highest priority first: constructor arguments, environment variables, `.env`, `c
 
 ## Environment Variables
 
-Create a `.env` file in the project root. The app reads `WAGE_ETL_` names. Docker Compose reads `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` to start Postgres.
+Create a `.env` file in the project root. The app and Docker Compose both read these names.
 
 ```bash
 # Database
@@ -39,12 +39,6 @@ WAGE_ETL_DB__PASSWORD=secret
 # Logging (optional)
 WAGE_ETL_LOGGING__LEVEL=INFO
 WAGE_ETL_LOGGING__TO_FILE=true
-
-# Docker Compose
-DB_PORT=5432
-DB_NAME=wage_db
-DB_USER=postgres
-DB_PASSWORD=secret
 ```
 
 `cache_dir` is always `data_dir / cache`. Override the data directory with `WAGE_ETL_PATHS__DATA_DIR`.

@@ -5,7 +5,6 @@ import json
 import base64
 import pytest
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from wage_etl.extract.cache import ResponseCache
 

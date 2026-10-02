@@ -2,7 +2,6 @@
 Shared pytest fixtures for extraction tests.
 """
 import pytest
-from pathlib import Path
 from unittest.mock import Mock
 
 from wage_etl.extract.cache import ResponseCache

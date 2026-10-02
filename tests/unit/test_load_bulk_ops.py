@@ -1,8 +1,7 @@
 """
 Tests for load bulk operations.
 """
-import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock
 import pandas as pd
 from io import StringIO
 

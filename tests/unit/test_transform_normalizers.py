@@ -1,7 +1,6 @@
 """
 Tests for transform normalizers.
 """
-import pytest
 from wage_etl.transform.normalizers import (
     normalize_header_for_lookup,
     get_family_config_metadata,

@@ -1,9 +1,7 @@
 """
 Tests for transform pandas operations.
 """
-import pytest
 import pandas as pd
-from pydantic import ValidationError
 from wage_etl.transform.pandas_ops import (
     table_to_dataframe,
     clean_currency_columns,

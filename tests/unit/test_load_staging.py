@@ -260,13 +260,9 @@ class TestLoadRejects:
 
         load_rejects(db, records, run_id=123, table="stg_wages_rejects")
 
-        # Verify the reason was truncated to 1000 chars
-        copy_call = mock_cursor.copy_expert.call_args
-        buffer = copy_call[0][1]
-        content = buffer.getvalue()
-        # The reason in the CSV should be truncated
-        assert len(long_reason) == 2000
-        # The actual content in buffer will have the truncated version
+        content = mock_cursor.copy_expert.call_args[0][1].getvalue()
+        assert "x" * 1000 in content
+        assert "x" * 1001 not in content
 
 
 class TestGetStagingCounts:

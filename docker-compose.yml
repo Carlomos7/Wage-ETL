@@ -5,13 +5,13 @@ services:
     container_name: db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${WAGE_ETL_DB__USER}
+      POSTGRES_PASSWORD: ${WAGE_ETL_DB__PASSWORD}
+      POSTGRES_DB: ${WAGE_ETL_DB__NAME}
     ports:
-      - "${DB_PORT}:5432"
+      - "${WAGE_ETL_DB__PORT}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${WAGE_ETL_DB__USER} -d ${WAGE_ETL_DB__NAME}"]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -28,9 +28,9 @@ services:
       db:
         condition: service_healthy
     command: [
-      "-url=jdbc:postgresql://db:5432/${DB_NAME}",
-      "-user=${DB_USER}",
-      "-password=${DB_PASSWORD}",
+      "-url=jdbc:postgresql://db:5432/${WAGE_ETL_DB__NAME}",
+      "-user=${WAGE_ETL_DB__USER}",
+      "-password=${WAGE_ETL_DB__PASSWORD}",
       "migrate"
     ]
     volumes:
