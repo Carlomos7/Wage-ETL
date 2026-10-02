@@ -4,10 +4,9 @@ Wage Calculator extractor.
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
-from config import get_settings
-from config.logging import get_logger
-from src.extract.cache import ResponseCache
-from src.extract.http import HttpClient
+from wage_etl.config.logging import get_logger
+from wage_etl.config.models import ScrapingConfig
+from wage_etl.extract.http import HttpClient
 
 logger = get_logger(module=__name__)
 
@@ -24,26 +23,9 @@ class WageExtractor:
         r"\s+\d{1,2},\s+\d{4}"
     )
 
-    def __init__(self, use_cache: bool = True):
-        settings = get_settings()
-        scraping_config = settings.scraping
-
-        cache = None
-        if use_cache:
-            cache_dir = settings.cache_dir / "wage"
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            cache = ResponseCache(cache_dir=cache_dir,
-                                  ttl_days=scraping_config.cache_ttl_days)
-            cache.clear_expired()
-
-        self._client = HttpClient(
-            base_url=scraping_config.base_url,
-            timeout=scraping_config.timeout_seconds,
-            max_retries=scraping_config.max_retries,
-            ssl_verify=scraping_config.ssl_verify,
-            proxies=scraping_config.proxies,
-            cache=cache,
-        )
+    def __init__(self, client: HttpClient, scraping_config: ScrapingConfig) -> None:
+        self._client = client
+        self._scraping_config = scraping_config
 
     def _extract_page_updated_at(self, soup: BeautifulSoup) -> datetime | None:
         """Extract 'last updated' date from page."""

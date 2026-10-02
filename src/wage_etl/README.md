@@ -1,14 +1,15 @@
-# src/
+# wage_etl
 
 ETL pipeline for living wage data. Three layers:
 > extract → transform → load.
 
 ```mint
-src/
-├── __init.py__
+src/wage_etl/
+├── pipeline.py   # Builds the extractors and database once
 ├── extract/      # Data Retrieval (Census API, MIT scraper)
 ├── transform/    # Cleaning, reshaping, validation
-└── load/         # PostgreSQL staging tables
+├── load/         # PostgreSQL staging tables
+└── config/       # Settings models and logging setup
 ```
 
 ```mermaid

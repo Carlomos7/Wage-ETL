@@ -57,7 +57,7 @@ flowchart TB
 ## Usage
 
 ```python
-from src.transform import normalize_wages, normalize_expenses, table_to_dataframe
+from wage_etl.transform import normalize_wages, normalize_expenses, table_to_dataframe
 
 # From extract layer output
 wages_df = table_to_dataframe(scrape_result.wages_data)

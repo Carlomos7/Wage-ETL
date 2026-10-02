@@ -1,9 +1,9 @@
 """
 Load layer - database operations for ETL pipeline.
 """
-from src.load.db import get_connection, get_cursor, test_connection
-from src.load.run_tracker import start_run, end_run, get_latest_run
-from src.load.staging import (
+from wage_etl.load.db import Database
+from wage_etl.load.run_tracker import start_run, end_run, get_latest_run
+from wage_etl.load.staging import (
     bulk_upsert_wages,
     bulk_upsert_expenses,
     load_rejects,
@@ -13,9 +13,7 @@ from src.load.staging import (
 
 __all__ = [
     # Connection
-    "get_connection",
-    "get_cursor",
-    "test_connection",
+    "Database",
     # Run tracking
     "start_run",
     "end_run",

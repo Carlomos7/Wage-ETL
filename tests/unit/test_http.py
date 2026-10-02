@@ -5,8 +5,8 @@ import pytest
 from unittest.mock import Mock, patch
 from requests.exceptions import Timeout, HTTPError
 
-from src.extract.http import HttpClient
-from src.extract.cache import ResponseCache
+from wage_etl.extract.http import HttpClient
+from wage_etl.extract.cache import ResponseCache
 
 
 class TestHttpClient:
@@ -25,7 +25,7 @@ class TestHttpClient:
         assert client._build_url("api/data") == "https://example.com/api/data"
         assert client._build_url("https://other.com") == "https://other.com"
 
-    @patch('src.extract.http.HttpClient._fetch_with_retry')
+    @patch('wage_etl.extract.http.HttpClient._fetch_with_retry')
     def test_get_with_cache_hit(self, mock_fetch):
         """Test GET request with cache hit."""
         cache = Mock(spec=ResponseCache)
@@ -37,7 +37,7 @@ class TestHttpClient:
         assert result == b"cached content"
         mock_fetch.assert_not_called()
 
-    @patch('src.extract.http.HttpClient._fetch_with_retry')
+    @patch('wage_etl.extract.http.HttpClient._fetch_with_retry')
     def test_get_with_cache_miss(self, mock_fetch):
         """Test GET request with cache miss."""
         cache = Mock(spec=ResponseCache)
@@ -50,8 +50,8 @@ class TestHttpClient:
         assert result == b"fresh content"
         cache.store.assert_called_once()
 
-    @patch('src.extract.http.HttpClient._fetch')
-    @patch('src.extract.http.HttpClient._wait')
+    @patch('wage_etl.extract.http.HttpClient._fetch')
+    @patch('wage_etl.extract.http.HttpClient._wait')
     def test_retry_on_timeout(self, mock_wait, mock_fetch):
         """Test retry logic on timeout."""
         mock_fetch.side_effect = [Timeout("Connection timeout"), b"success"]
@@ -62,7 +62,7 @@ class TestHttpClient:
         assert result == b"success"
         assert mock_fetch.call_count == 2
 
-    @patch('src.extract.http.HttpClient._fetch')
+    @patch('wage_etl.extract.http.HttpClient._fetch')
     def test_no_retry_on_404(self, mock_fetch):
         """Test that 404 errors are not retried."""
         mock_response = Mock()

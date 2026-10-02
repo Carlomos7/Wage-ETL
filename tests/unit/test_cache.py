@@ -7,7 +7,7 @@ import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from src.extract.cache import ResponseCache
+from wage_etl.extract.cache import ResponseCache
 
 
 class TestResponseCache:

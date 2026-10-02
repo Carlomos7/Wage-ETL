@@ -7,9 +7,8 @@ from urllib.parse import urljoin
 import requests
 from requests.compat import urlencode
 from requests.exceptions import ConnectionError, Timeout, HTTPError, RequestException
-from config.settings import get_settings
-from config.logging import get_logger
-from src.extract.cache import ResponseCache
+from wage_etl.config.logging import get_logger
+from wage_etl.extract.cache import ResponseCache
 
 logger = get_logger(module=__name__)
 
