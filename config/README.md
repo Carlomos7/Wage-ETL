@@ -12,12 +12,12 @@ config/
 
 ## Config Sources
 
-Highest priority first: constructor arguments, environment variables, `.env`, legacy flat names, `config.yaml`, then secrets. `state_fips.json` is reference data, loaded on its own, not a setting.
+Highest priority first: constructor arguments, environment variables, `.env`, `config.yaml`, then secrets. `state_fips.json` is reference data, loaded on its own, not a setting.
 
 | What                  | Where               | Example                                      |
 | --------------------- | ------------------- | -------------------------------------------- |
-| Database credentials  | `.env`              | `WAGE_ETL_DB__HOST=localhost` or `DB_HOST=localhost` |
-| Log level             | `.env`              | `WAGE_ETL_LOGGING__LEVEL=DEBUG` or `LOG_LEVEL=DEBUG` |
+| Database credentials  | `.env`              | `WAGE_ETL_DB__HOST=localhost`                |
+| Log level             | `.env`              | `WAGE_ETL_LOGGING__LEVEL=DEBUG`              |
 | API/scraping settings | `config.yaml`       | `timeout_seconds: 30`                        |
 | Target states         | `config.yaml`       | `target_states: ["NJ", "NY"]`                |
 | One-run state override | environment        | `WAGE_ETL_PIPELINE__TARGET_STATES='["NY"]'`  |
@@ -26,29 +26,28 @@ Highest priority first: constructor arguments, environment variables, `.env`, le
 
 ## Environment Variables
 
-Create a `.env` file in the project root. Prefixed names are the ones to use when `DB_HOST` or `LOG_LEVEL` would collide with another tool. The flat names are still accepted, and Docker Compose uses those flat names for Postgres.
+Create a `.env` file in the project root. The app reads `WAGE_ETL_` names. Docker Compose reads `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` to start Postgres.
 
 ```bash
-# Database (canonical)
+# Database
 WAGE_ETL_DB__HOST=localhost
 WAGE_ETL_DB__PORT=5432
 WAGE_ETL_DB__NAME=wage_db
 WAGE_ETL_DB__USER=postgres
 WAGE_ETL_DB__PASSWORD=secret
 
-# Database (still accepted; also used by Docker Compose)
-DB_HOST=localhost
+# Logging (optional)
+WAGE_ETL_LOGGING__LEVEL=INFO
+WAGE_ETL_LOGGING__TO_FILE=true
+
+# Docker Compose
 DB_PORT=5432
 DB_NAME=wage_db
 DB_USER=postgres
 DB_PASSWORD=secret
-
-# Logging (optional). Canonical form is WAGE_ETL_LOGGING__LEVEL.
-LOG_LEVEL=INFO
-LOG_TO_FILE=true
 ```
 
-When both forms are set, the `WAGE_ETL_` name wins. `cache_dir` is always `data_dir / cache`. Override the data directory with `WAGE_ETL_PATHS__DATA_DIR`.
+`cache_dir` is always `data_dir / cache`. Override the data directory with `WAGE_ETL_PATHS__DATA_DIR`.
 
 ## Common Changes
 
