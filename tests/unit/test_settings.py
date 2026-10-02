@@ -34,35 +34,20 @@ def test_prefixed_env_overrides_yaml(monkeypatch):
     assert settings.pipeline.target_states == ["NY"]
 
 
-def test_legacy_flat_names_fill_database(monkeypatch):
-    """DB_HOST and the other flat names still populate nested settings."""
-    monkeypatch.delenv("WAGE_ETL_DB__HOST", raising=False)
-    monkeypatch.setenv("DB_HOST", "legacy-host")
-    monkeypatch.setenv("DB_PORT", "5433")
-    monkeypatch.setenv("DB_NAME", "legacy_db")
-    monkeypatch.setenv("DB_USER", "legacy_user")
-    monkeypatch.setenv("DB_PASSWORD", "legacy-secret")
+def test_prefixed_env_fills_database(monkeypatch):
+    """WAGE_ETL_DB__* populates nested database settings."""
+    monkeypatch.setenv("WAGE_ETL_DB__HOST", "db-host")
+    monkeypatch.setenv("WAGE_ETL_DB__PORT", "5433")
+    monkeypatch.setenv("WAGE_ETL_DB__NAME", "wage_db")
+    monkeypatch.setenv("WAGE_ETL_DB__USER", "postgres")
+    monkeypatch.setenv("WAGE_ETL_DB__PASSWORD", "secret")
 
     settings = Settings(_env_file=None)
-    assert settings.db.host == "legacy-host"
+    assert settings.db.host == "db-host"
     assert settings.db.port == 5433
-    assert settings.db.name == "legacy_db"
-    assert settings.db.user == "legacy_user"
-    assert settings.db.password.get_secret_value() == "legacy-secret"
-
-
-def test_prefixed_name_beats_flat_name(monkeypatch):
-    """WAGE_ETL_DB__HOST wins when DB_HOST is also set."""
-    monkeypatch.setenv("DB_HOST", "flat-host")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_NAME", "wage_db")
-    monkeypatch.setenv("DB_USER", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "flat-secret")
-    monkeypatch.setenv("WAGE_ETL_DB__HOST", "prefixed-host")
-
-    settings = Settings(_env_file=None)
-    assert settings.db.host == "prefixed-host"
-    assert settings.db.password.get_secret_value() == "flat-secret"
+    assert settings.db.name == "wage_db"
+    assert settings.db.user == "postgres"
+    assert settings.db.password.get_secret_value() == "secret"
 
 
 def test_password_is_hidden_from_repr():
@@ -113,11 +98,11 @@ def test_get_settings_does_not_create_directories(tmp_path, monkeypatch):
     log_dir = tmp_path / "logs"
     monkeypatch.setenv("WAGE_ETL_PATHS__DATA_DIR", str(data_dir))
     monkeypatch.setenv("WAGE_ETL_PATHS__LOG_DIR", str(log_dir))
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_NAME", "wage_db")
-    monkeypatch.setenv("DB_USER", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "secret")
+    monkeypatch.setenv("WAGE_ETL_DB__HOST", "localhost")
+    monkeypatch.setenv("WAGE_ETL_DB__PORT", "5432")
+    monkeypatch.setenv("WAGE_ETL_DB__NAME", "wage_db")
+    monkeypatch.setenv("WAGE_ETL_DB__USER", "postgres")
+    monkeypatch.setenv("WAGE_ETL_DB__PASSWORD", "secret")
 
     get_settings.cache_clear()
     try:

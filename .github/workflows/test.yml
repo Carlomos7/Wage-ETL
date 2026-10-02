@@ -15,11 +15,11 @@ jobs:
     
     env:
       ENVIRONMENT: testing
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_NAME: test_db
-      DB_USER: test_user
-      DB_PASSWORD: test_password
+      WAGE_ETL_DB__HOST: localhost
+      WAGE_ETL_DB__PORT: 5432
+      WAGE_ETL_DB__NAME: test_db
+      WAGE_ETL_DB__USER: test_user
+      WAGE_ETL_DB__PASSWORD: test_password
 
     steps:
     - name: Checkout repository
