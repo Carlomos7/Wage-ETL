@@ -2,7 +2,7 @@
 Tests for transform normalizers.
 """
 import pytest
-from src.transform.normalizers import (
+from wage_etl.transform.normalizers import (
     normalize_header_for_lookup,
     get_family_config_metadata,
     normalize_category_key,

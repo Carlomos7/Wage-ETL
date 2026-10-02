@@ -5,8 +5,7 @@ from io import StringIO
 
 import pandas as pd
 
-from config.logging import get_logger
-from src.load.db import get_connection
+from wage_etl.config.logging import get_logger
 
 logger = get_logger(module=__name__)
 

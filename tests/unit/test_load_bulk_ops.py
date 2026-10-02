@@ -6,7 +6,7 @@ from unittest.mock import Mock, MagicMock, patch
 import pandas as pd
 from io import StringIO
 
-from src.load.bulk_ops import (
+from wage_etl.load.bulk_ops import (
     copy_to_temp,
     WAGES_COLUMNS,
     WAGES_COLUMN_DEFS,

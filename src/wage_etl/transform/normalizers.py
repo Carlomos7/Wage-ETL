@@ -1,5 +1,5 @@
 import re
-from src.transform.constants import CATEGORY_MAP, FAMILY_CONFIG_MAP
+from wage_etl.transform.constants import CATEGORY_MAP, FAMILY_CONFIG_MAP
 
 
 def normalize_header_for_lookup(header: str) -> str:

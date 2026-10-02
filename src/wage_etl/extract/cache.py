@@ -8,8 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from config.settings import get_settings
-from config.logging import get_logger
+from wage_etl.config.logging import get_logger
 
 logger = get_logger(module=__name__)
 
@@ -19,9 +18,8 @@ class ResponseCache:
     File-based cache for HTTP responses.
     '''
 
-    def __init__(self, cache_dir: Optional[Path] = None, ttl_days: int = 30):
-        settings = get_settings()
-        self.cache_dir = cache_dir if cache_dir is not None else settings.cache_dir
+    def __init__(self, cache_dir: Path, ttl_days: int = 30):
+        self.cache_dir = cache_dir
         self.ttl_days = ttl_days
 
     def _hash_key(self, key: str) -> str:

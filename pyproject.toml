@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "wage-etl"
 version = "0.1.0"
@@ -11,7 +15,7 @@ dependencies = [
     "pathlib>=1.0.1",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.4",
-    "pydantic-settings>=2.12.0",
+    "pydantic-settings[yaml]>=2.12.0",
     "pylint>=4.0.4",
     "pytest>=9.0.2",
     "python-dotenv>=1.2.1",
@@ -19,16 +23,22 @@ dependencies = [
     "requests>=2.32.5",
 ]
 
+[project.scripts]
+wage-etl = "wage_etl.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wage_etl"]
+
 # pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # addopts = ["--disable-warnings", "-q"]
-pythonpath = ["."]
+pythonpath = ["src"]
 
 [tool.coverage.run]
 branch = true
-source = ["src"]
-omit = ["tests/*", "config/*", "sql/*", "data/*", "logs/*"]
+source = ["wage_etl"]
+omit = ["tests/*", "sql/*", "data/*", "logs/*"]
 
 [tool.coverage.report]
 show_missing = true

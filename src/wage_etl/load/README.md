@@ -62,24 +62,21 @@ flowchart TB
 ## Usage
 
 ```python
-from src.load import (
+from wage_etl.load import (
     start_run, end_run,
     bulk_upsert_wages, bulk_upsert_expenses,
     load_rejects
 )
 
-# Start tracking
-run_id = start_run(state_fips="34")
+run_id = start_run(db, state_fips="34")
 
-# Load data
-wages_count = bulk_upsert_wages(wages_df, run_id)
-expenses_count = bulk_upsert_expenses(expenses_df, run_id)
+wages_count = bulk_upsert_wages(db, wages_df, run_id)
+expenses_count = bulk_upsert_expenses(db, expenses_df, run_id)
 
-# Handle rejects
-load_rejects(reject_records, run_id, "stg_wages_rejects")
+load_rejects(db, reject_records, run_id, "stg_wages_rejects")
 
-# Finish with stats
 end_run(
+    db,
     run_id,
     status="SUCCESS",
     wages_loaded=wages_count,
@@ -119,6 +116,6 @@ end_run(
 
 - **Run tracking** - Every load gets a `run_id`. Makes it easy to see what loaded when, roll back a bad run, or debug issues.
 
-- **Context managers for connections** - `get_connection()` handles commit/rollback automatically. No forgotten commits or leaked connections.
+- **Context managers for connections** - `Database.connect()` handles commit/rollback automatically. No forgotten commits or leaked connections.
 
 - **Whitelist for table names** - `load_rejects()` uses a [`frozenset`](https://www.w3schools.com/python/ref_func_frozenset.asp) of allowed table names. It's a set that can't be modified after creation, so the whitelist stays locked. Prevents SQL injection when the table name comes from a variable.

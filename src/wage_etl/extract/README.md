@@ -52,13 +52,11 @@ flowchart TB
 ## Usage
 
 ```python
-from src.extract import get_all_counties, scrape_state_counties
+from wage_etl.extract import get_all_counties, scrape_state_counties
 
-# Get county reference data for target states (from config)
-counties = get_all_counties()
+counties = get_all_counties(census)
 
-# Scrape wages - yields results, doesn't load all into memory
-for result in scrape_state_counties("34", ["001", "003", "005"]):
+for result in scrape_state_counties(wages, "34", ["001", "003", "005"]):
     if result.success:
         process(result.wages_data, result.expenses_data)
     else:

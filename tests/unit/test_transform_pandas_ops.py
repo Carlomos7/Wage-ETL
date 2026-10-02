@@ -4,7 +4,7 @@ Tests for transform pandas operations.
 import pytest
 import pandas as pd
 from pydantic import ValidationError
-from src.transform.pandas_ops import (
+from wage_etl.transform.pandas_ops import (
     table_to_dataframe,
     clean_currency_columns,
     add_family_config_columns,
@@ -13,7 +13,7 @@ from src.transform.pandas_ops import (
     normalize_wages,
     normalize_expenses,
 )
-from src.transform.models import WageRecord, ExpenseRecord
+from wage_etl.transform.models import WageRecord, ExpenseRecord
 
 
 class TestTableToDataframe:

@@ -6,7 +6,7 @@ from unittest.mock import Mock, MagicMock, patch
 import pandas as pd
 from io import StringIO
 
-from src.load.staging import (
+from wage_etl.load.staging import (
     bulk_upsert_wages,
     bulk_upsert_expenses,
     load_rejects,
@@ -16,12 +16,27 @@ from src.load.staging import (
 )
 
 
+def _connection_db(conn):
+    """Database double whose connect() yields conn."""
+    db = Mock()
+    db.connect.return_value.__enter__ = Mock(return_value=conn)
+    db.connect.return_value.__exit__ = Mock(return_value=False)
+    return db
+
+
+def _cursor_db(cursor):
+    """Database double whose cursor() yields cursor."""
+    db = Mock()
+    db.cursor.return_value.__enter__ = Mock(return_value=cursor)
+    db.cursor.return_value.__exit__ = Mock(return_value=False)
+    return db
+
+
 class TestBulkUpsertWages:
     """Tests for bulk_upsert_wages function."""
 
-    @patch('src.load.staging.get_connection')
-    @patch('src.load.staging.copy_to_temp')
-    def test_bulk_upsert_wages_success(self, mock_copy_to_temp, mock_get_connection):
+    @patch('wage_etl.load.staging.copy_to_temp')
+    def test_bulk_upsert_wages_success(self, mock_copy_to_temp):
         """Test successful bulk upsert of wages."""
         from datetime import date
         # Setup
@@ -40,12 +55,11 @@ class TestBulkUpsertWages:
         mock_cursor.rowcount = 2
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
         mock_copy_to_temp.return_value = 2
 
         # Test
-        result = bulk_upsert_wages(df, run_id=123)
+        result = bulk_upsert_wages(db, df, run_id=123)
 
         # Verify
         assert result == 2
@@ -64,11 +78,10 @@ class TestBulkUpsertWages:
     def test_bulk_upsert_wages_empty_dataframe(self):
         """Test bulk_upsert_wages with empty DataFrame."""
         df = pd.DataFrame()
-        result = bulk_upsert_wages(df, run_id=123)
+        result = bulk_upsert_wages(Mock(), df, run_id=123)
         assert result == 0
 
-    @patch('src.load.staging.get_connection')
-    def test_bulk_upsert_wages_missing_columns(self, mock_get_connection):
+    def test_bulk_upsert_wages_missing_columns(self):
         """Test bulk_upsert_wages with missing required columns."""
         df = pd.DataFrame({
             "county_fips": ["001"],
@@ -77,11 +90,10 @@ class TestBulkUpsertWages:
         })
 
         with pytest.raises(ValueError, match="Missing required columns"):
-            bulk_upsert_wages(df, run_id=123)
+            bulk_upsert_wages(Mock(), df, run_id=123)
 
-    @patch('src.load.staging.get_connection')
-    @patch('src.load.staging.copy_to_temp')
-    def test_bulk_upsert_wages_column_order(self, mock_copy_to_temp, mock_get_connection):
+    @patch('wage_etl.load.staging.copy_to_temp')
+    def test_bulk_upsert_wages_column_order(self, mock_copy_to_temp):
         """Test that columns are reordered correctly."""
         from datetime import date
         df = pd.DataFrame({
@@ -99,10 +111,9 @@ class TestBulkUpsertWages:
         mock_cursor.rowcount = 1
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
 
-        bulk_upsert_wages(df, run_id=123)
+        bulk_upsert_wages(db, df, run_id=123)
 
         # Verify columns are in correct order
         call_df = mock_copy_to_temp.call_args[0][1]
@@ -114,9 +125,8 @@ class TestBulkUpsertWages:
 class TestBulkUpsertExpenses:
     """Tests for bulk_upsert_expenses function."""
 
-    @patch('src.load.staging.get_connection')
-    @patch('src.load.staging.copy_to_temp')
-    def test_bulk_upsert_expenses_success(self, mock_copy_to_temp, mock_get_connection):
+    @patch('wage_etl.load.staging.copy_to_temp')
+    def test_bulk_upsert_expenses_success(self, mock_copy_to_temp):
         """Test successful bulk upsert of expenses."""
         from datetime import date
         df = pd.DataFrame({
@@ -134,11 +144,10 @@ class TestBulkUpsertExpenses:
         mock_cursor.rowcount = 2
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
         mock_copy_to_temp.return_value = 2
 
-        result = bulk_upsert_expenses(df, run_id=123)
+        result = bulk_upsert_expenses(db, df, run_id=123)
 
         assert result == 2
         mock_copy_to_temp.assert_called_once()
@@ -152,11 +161,10 @@ class TestBulkUpsertExpenses:
     def test_bulk_upsert_expenses_empty_dataframe(self):
         """Test bulk_upsert_expenses with empty DataFrame."""
         df = pd.DataFrame()
-        result = bulk_upsert_expenses(df, run_id=123)
+        result = bulk_upsert_expenses(Mock(), df, run_id=123)
         assert result == 0
 
-    @patch('src.load.staging.get_connection')
-    def test_bulk_upsert_expenses_missing_columns(self, mock_get_connection):
+    def test_bulk_upsert_expenses_missing_columns(self):
         """Test bulk_upsert_expenses with missing required columns."""
         df = pd.DataFrame({
             "county_fips": ["001"],
@@ -164,14 +172,13 @@ class TestBulkUpsertExpenses:
         })
 
         with pytest.raises(ValueError, match="Missing required columns"):
-            bulk_upsert_expenses(df, run_id=123)
+            bulk_upsert_expenses(Mock(), df, run_id=123)
 
 
 class TestLoadRejects:
     """Tests for load_rejects function."""
 
-    @patch('src.load.staging.get_connection')
-    def test_load_rejects_success(self, mock_get_connection):
+    def test_load_rejects_success(self):
         """Test successful loading of rejects."""
         records = [
             {"raw_data": {"county": "001"}, "rejection_reason": "Invalid format"},
@@ -183,10 +190,9 @@ class TestLoadRejects:
         mock_cursor.rowcount = 2
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
 
-        result = load_rejects(records, run_id=123, table="stg_wages_rejects")
+        result = load_rejects(db, records, run_id=123, table="stg_wages_rejects")
 
         assert result == 2
         mock_cursor.copy_expert.assert_called_once()
@@ -196,7 +202,7 @@ class TestLoadRejects:
 
     def test_load_rejects_empty_list(self):
         """Test load_rejects with empty list."""
-        result = load_rejects([], run_id=123, table="stg_wages_rejects")
+        result = load_rejects(Mock(), [], run_id=123, table="stg_wages_rejects")
         assert result == 0
 
     def test_load_rejects_invalid_table(self):
@@ -204,10 +210,9 @@ class TestLoadRejects:
         records = [{"raw_data": {}, "rejection_reason": "Test"}]
 
         with pytest.raises(ValueError, match="Invalid reject table"):
-            load_rejects(records, run_id=123, table="invalid_table")
+            load_rejects(Mock(), records, run_id=123, table="invalid_table")
 
-    @patch('src.load.staging.get_connection')
-    def test_load_rejects_with_raw_data_key(self, mock_get_connection):
+    def test_load_rejects_with_raw_data_key(self):
         """Test load_rejects when records have 'raw_data' key."""
         records = [
             {"raw_data": {"county": "001"}, "rejection_reason": "Error"}
@@ -218,14 +223,12 @@ class TestLoadRejects:
         mock_cursor.rowcount = 1
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
 
-        result = load_rejects(records, run_id=123, table="stg_wages_rejects")
+        result = load_rejects(db, records, run_id=123, table="stg_wages_rejects")
         assert result == 1
 
-    @patch('src.load.staging.get_connection')
-    def test_load_rejects_without_raw_data_key(self, mock_get_connection):
+    def test_load_rejects_without_raw_data_key(self):
         """Test load_rejects when record itself is the raw_data."""
         records = [
             {"county": "001", "rejection_reason": "Error"}
@@ -236,14 +239,12 @@ class TestLoadRejects:
         mock_cursor.rowcount = 1
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
 
-        result = load_rejects(records, run_id=123, table="stg_wages_rejects")
+        result = load_rejects(db, records, run_id=123, table="stg_wages_rejects")
         assert result == 1
 
-    @patch('src.load.staging.get_connection')
-    def test_load_rejects_truncates_long_reasons(self, mock_get_connection):
+    def test_load_rejects_truncates_long_reasons(self):
         """Test that long rejection reasons are truncated."""
         long_reason = "x" * 2000
         records = [
@@ -255,10 +256,9 @@ class TestLoadRejects:
         mock_cursor.rowcount = 1
         mock_conn.cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
         mock_conn.cursor.return_value.__exit__ = Mock(return_value=False)
-        mock_get_connection.return_value.__enter__ = Mock(return_value=mock_conn)
-        mock_get_connection.return_value.__exit__ = Mock(return_value=False)
+        db = _connection_db(mock_conn)
 
-        load_rejects(records, run_id=123, table="stg_wages_rejects")
+        load_rejects(db, records, run_id=123, table="stg_wages_rejects")
 
         # Verify the reason was truncated to 1000 chars
         copy_call = mock_cursor.copy_expert.call_args
@@ -272,8 +272,7 @@ class TestLoadRejects:
 class TestGetStagingCounts:
     """Tests for get_staging_counts function."""
 
-    @patch('src.load.staging.get_cursor')
-    def test_get_staging_counts(self, mock_get_cursor):
+    def test_get_staging_counts(self):
         """Test getting counts for all staging tables."""
         mock_cursor = MagicMock()
         # Mock fetchone to return different counts for each table
@@ -283,10 +282,9 @@ class TestGetStagingCounts:
             [5],   # stg_wages_rejects
             [3],   # stg_expenses_rejects
         ]
-        mock_get_cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
-        mock_get_cursor.return_value.__exit__ = Mock(return_value=False)
+        db = _cursor_db(mock_cursor)
 
-        result = get_staging_counts()
+        result = get_staging_counts(db)
 
         assert result == {
             "stg_wages": 10,
@@ -302,14 +300,12 @@ class TestGetStagingCounts:
 class TestTruncateStaging:
     """Tests for truncate_staging function."""
 
-    @patch('src.load.staging.get_cursor')
-    def test_truncate_staging(self, mock_get_cursor):
+    def test_truncate_staging(self):
         """Test truncating all staging tables."""
         mock_cursor = MagicMock()
-        mock_get_cursor.return_value.__enter__ = Mock(return_value=mock_cursor)
-        mock_get_cursor.return_value.__exit__ = Mock(return_value=False)
+        db = _cursor_db(mock_cursor)
 
-        truncate_staging()
+        truncate_staging(db)
 
         # Verify execute was called 4 times (once per table)
         assert mock_cursor.execute.call_count == 4

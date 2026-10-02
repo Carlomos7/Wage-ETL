@@ -1,6 +1,6 @@
 import pandas as pd
-from src.transform.models import WageRecord, ExpenseRecord
-from src.transform.pandas_ops import dataframe_to_models
+from wage_etl.transform.models import WageRecord, ExpenseRecord
+from wage_etl.transform.pandas_ops import dataframe_to_models
 
 NON_FAMILY_COLS = {"category", "county_fips"}
 

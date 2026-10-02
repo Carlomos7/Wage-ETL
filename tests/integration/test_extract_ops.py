@@ -1,10 +1,9 @@
 """
 Tests for extraction operations.
 """
-import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-from src.extract.extract_ops import (
+from wage_etl.extract.extract_ops import (
     ScrapeResult,
     scrape_county,
     scrape_county_with_extractor,
@@ -15,8 +14,8 @@ from src.extract.extract_ops import (
     get_county_codes_for_state,
     get_county_codes,
 )
-from src.extract.wage_scraper import WageExtractor
-from src.extract.census_api import CensusExtractor
+from wage_etl.extract.wage_scraper import WageExtractor
+from wage_etl.extract.census_api import CensusExtractor
 
 
 class TestScrapeResult:
@@ -49,8 +48,7 @@ class TestScrapeResult:
 class TestScrapeCounty:
     """Tests for scrape_county."""
 
-    @patch('src.extract.extract_ops.WageExtractor')
-    def test_success(self, mock_wage_extractor_class):
+    def test_success(self):
         """Test successful county scrape."""
         from datetime import datetime
         mock_extractor = Mock(spec=WageExtractor)
@@ -59,21 +57,18 @@ class TestScrapeCounty:
             "expenses_data": [{"category": "Food"}],
             "page_updated_at": datetime(2024, 1, 15),
         }
-        mock_wage_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        result = scrape_county("01", "001")
+        result = scrape_county(mock_extractor, "01", "001")
 
         assert result.success is True
         assert result.fips_code == "01001"
 
-    @patch('src.extract.extract_ops.WageExtractor')
-    def test_failure(self, mock_wage_extractor_class):
+    def test_failure(self):
         """Test failed county scrape."""
         mock_extractor = Mock(spec=WageExtractor)
         mock_extractor.get_county_data.side_effect = Exception("Network error")
-        mock_wage_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        result = scrape_county("01", "001")
+        result = scrape_county(mock_extractor, "01", "001")
 
         assert result.success is False
         assert result.error == "Network error"
@@ -101,8 +96,7 @@ class TestScrapeCountyWithExtractor:
 class TestScrapeStateCounties:
     """Tests for scrape_state_counties."""
 
-    @patch('src.extract.extract_ops.WageExtractor')
-    def test_scrape_multiple_counties(self, mock_wage_extractor_class):
+    def test_scrape_multiple_counties(self):
         """Test scraping multiple counties."""
         from datetime import datetime
         mock_extractor = Mock(spec=WageExtractor)
@@ -111,10 +105,9 @@ class TestScrapeStateCounties:
             "expenses_data": [],
             "page_updated_at": datetime(2024, 1, 15),
         }
-        mock_wage_extractor_class.return_value.__enter__.return_value = mock_extractor
 
         county_codes = ["001", "003"]
-        results = list(scrape_state_counties("01", county_codes))
+        results = list(scrape_state_counties(mock_extractor, "01", county_codes))
 
         assert len(results) == 2
         assert all(r.success for r in results)
@@ -124,21 +117,18 @@ class TestScrapeStateCounties:
 class TestCensusLookups:
     """Tests for Census lookup functions."""
 
-    @patch('src.extract.extract_ops.CensusExtractor')
-    def test_get_states(self, mock_census_extractor_class):
+    def test_get_states(self):
         """Test getting all states."""
         mock_extractor = Mock(spec=CensusExtractor)
         mock_extractor.get_states.return_value = [
             {"state_name": "Alabama", "state_fips": "01", "state_abbr": "AL"},
         ]
-        mock_census_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        result = get_states()
+        result = get_states(mock_extractor)
         assert len(result) == 1
         assert result[0]["state_name"] == "Alabama"
 
-    @patch('src.extract.extract_ops.CensusExtractor')
-    def test_get_all_counties(self, mock_census_extractor_class, *args):
+    def test_get_all_counties(self):
         """Test getting all counties for target states."""
         mock_extractor = Mock(spec=CensusExtractor)
         mock_extractor.get_counties.return_value = [
@@ -147,10 +137,8 @@ class TestCensusLookups:
             {"county_name": "Texas County", "state_fips": "48",
                 "county_fips": "001", "full_fips": "48001"},
         ]
-        mock_census_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        # get_all_counties returns all counties for all configured states
-        result = get_all_counties()
+        result = get_all_counties(mock_extractor)
 
         assert len(result) == 2
         assert result[0]["county_name"] == "Alabama County"
@@ -158,8 +146,7 @@ class TestCensusLookups:
 
         assert mock_extractor.get_counties.called
 
-    @patch('src.extract.extract_ops.CensusExtractor')
-    def test_get_counties_for_state(self, mock_census_extractor_class):
+    def test_get_counties_for_state(self):
         """Test getting counties for a specific state."""
         mock_extractor = Mock(spec=CensusExtractor)
         mock_extractor.get_counties.return_value = [
@@ -168,15 +155,13 @@ class TestCensusLookups:
             {"county_name": "Texas County", "state_fips": "48",
                 "county_fips": "001", "full_fips": "48001"},
         ]
-        mock_census_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        result = get_counties_for_state("01")
+        result = get_counties_for_state(mock_extractor, "01")
         assert len(result) == 1
         assert result[0]["county_name"] == "Alabama County"
         assert result[0]["state_fips"] == "01"
 
-    @patch('src.extract.extract_ops.CensusExtractor')
-    def test_get_county_codes_for_state(self, mock_census_extractor_class):
+    def test_get_county_codes_for_state(self):
         """Test getting county FIPS codes for a state."""
         mock_extractor = Mock(spec=CensusExtractor)
         mock_extractor.get_counties.return_value = [
@@ -185,17 +170,14 @@ class TestCensusLookups:
             {"county_name": "Another County", "state_fips": "01",
                 "county_fips": "003", "full_fips": "01003"},
         ]
-        mock_census_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        result = get_county_codes_for_state("01")
+        result = get_county_codes_for_state(mock_extractor, "01")
         assert result == ["001", "003"]
 
-    @patch('src.extract.extract_ops.CensusExtractor')
-    def test_get_county_codes(self, mock_census_extractor_class):
+    def test_get_county_codes(self):
         """Test getting all county FIPS codes for all states."""
         mock_extractor = Mock(spec=CensusExtractor)
         mock_extractor.get_county_codes.return_value = ["001", "003", "005"]
-        mock_census_extractor_class.return_value.__enter__.return_value = mock_extractor
 
-        result = get_county_codes()
+        result = get_county_codes(mock_extractor)
         assert result == ["001", "003", "005"]

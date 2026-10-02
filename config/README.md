@@ -1,45 +1,54 @@
 # config/
 
-Application configuration. Secrets in `.env`, app settings in YAML, static data in JSON.
+Application configuration. Secrets in `.env`, app settings in YAML, static data in JSON. The Python that loads them lives in `src/wage_etl/config/`.
 
 ```mint
 config/
-├── __init__.py
-├── settings.py        # Main Settings class (pydantic-settings)
-├── models.py          # Pydantic models for config validation
 ├── config.yaml        # App settings (URLs, timeouts, target states)
 ├── state_fips.json    # State abbreviation to FIPS code lookup
-├── logging.py         # Logging setup
-└── logging_conf.json  # Logging handlers and formatters
+├── logging_conf.json  # Logging handlers and formatters
+└── README.md
 ```
 
 ## Config Sources
 
-| What                  | Where               | Example                       |
-| --------------------- | ------------------- | ----------------------------- |
-| Database credentials  | `.env`              | `DB_HOST=localhost`           |
-| Log level             | `.env`              | `LOG_LEVEL=DEBUG`             |
-| API/scraping settings | `config.yaml`       | `timeout_seconds: 30`         |
-| Target states         | `config.yaml`       | `target_states: ["NJ", "NY"]` |
-| State FIPS codes      | `state_fips.json`   | `"NJ": "34"`                  |
-| Log format/handlers   | `logging_conf.json` | rotating file handler         |
+Highest priority first: constructor arguments, environment variables, `.env`, legacy flat names, `config.yaml`, then secrets. `state_fips.json` is reference data, loaded on its own, not a setting.
+
+| What                  | Where               | Example                                      |
+| --------------------- | ------------------- | -------------------------------------------- |
+| Database credentials  | `.env`              | `WAGE_ETL_DB__HOST=localhost` or `DB_HOST=localhost` |
+| Log level             | `.env`              | `WAGE_ETL_LOGGING__LEVEL=DEBUG` or `LOG_LEVEL=DEBUG` |
+| API/scraping settings | `config.yaml`       | `timeout_seconds: 30`                        |
+| Target states         | `config.yaml`       | `target_states: ["NJ", "NY"]`                |
+| One-run state override | environment        | `WAGE_ETL_PIPELINE__TARGET_STATES='["NY"]'`  |
+| State FIPS codes      | `state_fips.json`   | `"NJ": "34"`                                 |
+| Log format/handlers   | `logging_conf.json` | rotating file handler                        |
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root. Prefixed names are the ones to use when `DB_HOST` or `LOG_LEVEL` would collide with another tool. The flat names are still accepted, and Docker Compose uses those flat names for Postgres.
 
 ```bash
-# Database
+# Database (canonical)
+WAGE_ETL_DB__HOST=localhost
+WAGE_ETL_DB__PORT=5432
+WAGE_ETL_DB__NAME=wage_db
+WAGE_ETL_DB__USER=postgres
+WAGE_ETL_DB__PASSWORD=secret
+
+# Database (still accepted; also used by Docker Compose)
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=wage_db
 DB_USER=postgres
 DB_PASSWORD=secret
 
-# Logging (optional)
+# Logging (optional). Canonical form is WAGE_ETL_LOGGING__LEVEL.
 LOG_LEVEL=INFO
 LOG_TO_FILE=true
 ```
+
+When both forms are set, the `WAGE_ETL_` name wins. `cache_dir` is always `data_dir / cache`. Override the data directory with `WAGE_ETL_PATHS__DATA_DIR`.
 
 ## Common Changes
 
@@ -51,6 +60,12 @@ pipeline:
     - "NJ"
     - "NY"
     - "CA"
+```
+
+**Run one state without editing the file:**
+
+```bash
+WAGE_ETL_PIPELINE__TARGET_STATES='["NY"]' uv run wage-etl
 ```
 
 **Run all states** - use wildcard:
@@ -72,22 +87,20 @@ scraping:
 ## Usage
 
 ```python
-from config import get_settings
+from wage_etl.config import get_settings
 
 settings = get_settings()
+settings.paths.ensure_dirs()
 
-# Database
-settings.db_host
-settings.db_password
-
-# App config (from YAML)
+settings.db.host
+settings.db.password.get_secret_value()
 settings.api.base_url
 settings.scraping.timeout_seconds
 settings.pipeline.target_states
-
-# State lookup (from JSON)
-settings.state_config.fips_map["NJ"]  # "34"
+settings.paths.cache_dir
 ```
+
+State FIPS codes are loaded with `StateCodes.from_json`, not from `settings`.
 
 ## YAML Configuration Details
 
@@ -141,9 +154,10 @@ pipeline:
 
 All config is validated with Pydantic on startup:
 
-- URLs can't be empty
+- `base_url` must be an HTTP URL
 - `max_delay_seconds` must be ≥ `min_delay_seconds`
 - `min_success_rate` must be between 0 and 1
-- `log_level` must be DEBUG/INFO/WARNING/ERROR/CRITICAL
+- log level must be DEBUG/INFO/WARNING/ERROR/CRITICAL
+- unknown keys inside a YAML section are errors
 
-Bad config fails fast with a clear error message.
+Bad config fails fast with a clear error message. The database password is a secret and is omitted from `repr(settings)`.

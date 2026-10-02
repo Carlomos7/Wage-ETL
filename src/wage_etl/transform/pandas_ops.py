@@ -4,8 +4,8 @@ Pandas operations.
 
 from datetime import date
 import pandas as pd
-from config.logging import get_logger
-from src.transform.normalizers import (
+from wage_etl.config.logging import get_logger
+from wage_etl.transform.normalizers import (
     normalize_header_for_lookup,
     get_family_config_metadata,
     lookup_category_value,
@@ -13,7 +13,7 @@ from src.transform.normalizers import (
 )
 from pydantic import BaseModel, ValidationError
 from typing import Type
-from src.transform.models import WageRecord, ExpenseRecord
+from wage_etl.transform.models import WageRecord, ExpenseRecord
 
 logger = get_logger(module=__name__)
 
